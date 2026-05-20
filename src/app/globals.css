@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/*
+ * Calendly-derived design tokens (see Downloads/DESIGN.md). Light theme:
+ * Action Blue primary, Midnight Indigo text, Cloud Mist canvas, soft
+ * Slate-tinted shadows, geometric sans (Gilroy → Plus Jakarta Sans).
+ */
+@theme {
+  --color-midnight-indigo: #0b3558;
+  --color-action-blue: #006bff;
+  --color-action-blue-hover: #0057d4;
+  --color-lavender-glow: #e55cff;
+  --color-royal-amethyst: #8247f5;
+  --color-sunset-gold: #ffa600;
+  --color-skybound-blue: #0099ff;
+  --color-ocean-glimmer: #bb32d5;
+  --color-glacier-blue: #004eba;
+  --color-snow-white: #ffffff;
+  --color-cloud-mist: #f8f9fb;
+  --color-pale-gray: #e7edf6;
+  --color-slate-blue: #476788;
+  --color-steel-gray: #a6bbd1;
+  --color-platinum-tint: #d4e0ed;
+  --color-outline-gray: #e6e6e6;
+  --color-text-black: #0a0a0a;
+
+  --font-gilroy:
+    var(--font-app), ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  --shadow-sm:
+    rgba(71, 103, 136, 0.04) 0px 4px 5px 0px,
+    rgba(71, 103, 136, 0.03) 0px 4px 10px 0px,
+    rgba(71, 103, 136, 0.05) 0px 10px 20px 0px;
+  --shadow-sm-2:
+    rgba(71, 103, 136, 0.04) 0px 4px 5px 0px,
+    rgba(71, 103, 136, 0.03) 0px 8px 15px 0px,
+    rgba(71, 103, 136, 0.08) 0px 30px 50px 0px;
+  --shadow-sm-3:
+    rgba(71, 103, 136, 0.04) 0px 4px 5px 0px,
+    rgba(71, 103, 136, 0.03) 0px 8px 15px 0px,
+    rgba(71, 103, 136, 0.06) 0px 15px 30px 0px;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--color-cloud-mist);
+  color: var(--color-midnight-indigo);
+  font-family: var(--font-gilroy);
+}
+
+/*
+ * Native select styling is inconsistent and crams the chevron against the
+ * right edge. Hide it and draw our own (Slate Blue) with comfortable
+ * right padding.
+ */
+.app-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='16'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23476788'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpolyline%20points='6%209%2012%2015%2018%209'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
+  padding-right: 42px;
+}
