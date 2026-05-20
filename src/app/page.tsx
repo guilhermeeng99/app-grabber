@@ -17,8 +17,30 @@ export default function HomePage() {
       <PlayGrabber />
 
       <footer className="mt-20 text-center text-sm text-steel-gray">
-        Assets belong to their respective developers. App Grabber only fetches
-        the public Play Store listing.
+        <p>
+          Assets belong to their respective developers. App Grabber only fetches
+          the public Play Store listing.
+        </p>
+        <p className="mt-2">
+          Built by Guilherme Passos ·{" "}
+          <a
+            href="https://github.com/guilhermeeng99"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-slate-blue transition hover:text-action-blue"
+          >
+            GitHub
+          </a>{" "}
+          ·{" "}
+          <a
+            href="https://www.linkedin.com/in/guigapassos/"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-slate-blue transition hover:text-action-blue"
+          >
+            LinkedIn
+          </a>
+        </p>
       </footer>
     </main>
   );

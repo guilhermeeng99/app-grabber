@@ -1,112 +1,65 @@
 # App Grabber
 
-A website to download a Google Play app's **icon** and **promotional images**
-(screenshots + feature graphic) in the **highest available resolution**. Just
-type the app name.
+> **Use it now: https://app-grabber.vercel.app** — no install, no sign-up. Just open the link.
 
-> Repo, directory and code symbols keep the original `play-grabber` /
-> `play-assets` naming; **App Grabber** is the product name shown to users.
+App Grabber is a free web tool that downloads a Google Play app's **icon**,
+**feature graphic** and **screenshots** in the **highest available resolution**.
+Type an app name, preview every asset, and grab exactly what you need.
 
-Built with **Next.js (App Router) + TypeScript + Tailwind CSS**. The Google
-Play scraping runs server-side in API route handlers; the browser only talks to
-this app's own API.
+## Features
 
-## Requirements
-
-- [Node.js](https://nodejs.org/) 18.18+ (20+ recommended).
-
-## Getting started
-
-```bash
-npm install
-npm run dev          # http://localhost:3000
-```
+- **Search by name or package id**, for any Google Play store country and language.
+- **Highest resolution**: every image is fetched at its original size (`=s0`),
+  not the small store thumbnail.
+- **See each asset's resolution** right on its card.
+- **Pick the download size**: 0.3×, 0.5× or 1×.
+- **Download one by one, or all at once as a ZIP**.
 
 ## How to use
 
-1. Type an app name (e.g. `WhatsApp`), or switch to **By package id** and enter
-   `com.whatsapp` for an exact match.
-2. Pick a store country and listing language (for localized screenshots).
-3. Each card shows the asset's resolution. Use the **0.3× / 0.5× / 1×** picker
-   to choose the download size.
-4. Download each asset individually, or **Download all (ZIP)**.
+1. Open **https://app-grabber.vercel.app**.
+2. Type an app name (e.g. `WhatsApp`), or switch to **By package id**
+   (e.g. `com.whatsapp`) for an exact match.
+3. Choose a store country and language.
+4. Download each asset, or **Download all (ZIP)**.
 
-## Scripts
-
-```bash
-npm run dev          # Dev server
-npm run build        # Production build
-npm start            # Run the production build
-npm run typecheck    # tsc --noEmit
-npm run lint         # ESLint
-npm test             # Vitest
-npm run format       # Prettier
-```
+That is the whole thing. Nothing to install.
 
 ## How it works
 
-1. `POST /api/assets` resolves the package id (from the search term, or directly)
-   and fetches the listing via `google-play-scraper`.
-2. Each image URL is a `play-lh.googleusercontent.com` link. The size suffix
-   controls resolution: `=s0` returns the original (largest) asset; `=s<px>`
-   sets the longest side (the basis for the 0.3×/0.5×/1× picker).
-3. `GET /api/download` proxies a single image with `Content-Disposition:
-   attachment` (a cross-origin `<a download>` would otherwise just navigate).
-4. `POST /api/download/zip` takes the chosen image URLs and streams them as a
-   single ZIP via `archiver`.
+App Grabber reads the **public** Google Play listing on the server (the browser
+cannot, because of CORS), forces each image to its original resolution, and
+streams downloads through its own API so cross-origin images save cleanly, both
+as single files and as a ZIP. Server fetches are restricted to Google's image
+CDN.
 
-Both download routes only fetch Google's image CDN (host allow-list) to
-prevent SSRF.
+## Tech
 
-## Architecture
+Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS, Vitest. Feature-first
+Clean Architecture with a spec-driven workflow, see [`CLAUDE.md`](CLAUDE.md) and
+[`docs/specs/play-assets.md`](docs/specs/play-assets.md).
 
-Feature-first Clean Architecture (see [`CLAUDE.md`](CLAUDE.md)) with a
-spec-driven workflow (see [`docs/specs/play-assets.md`](docs/specs/play-assets.md)):
+Hosted on Vercel. Every push to `main` runs the CI gate (lint, test, build),
+auto-bumps the version, publishes a GitHub release, and redeploys.
 
-```
-src/
-├── app/                      # routes (pages) + API route handlers
-├── core/                     # Result, errors, utils
-└── features/play-assets/
-    ├── domain/               # entities, repository interface, use cases
-    ├── data/                 # scraper datasource, repository impl, mappers
-    ├── ui/                   # components, hook, pure reducer
-    ├── api/                  # wire DTOs
-    └── di.ts                 # composition root
-test/                         # mirrors src/ (Vitest) + harness/
+## Run locally (developers)
+
+```bash
+npm install
+npm run dev      # http://localhost:3000
 ```
 
-## Continuous deployment
-
-`.github/workflows/deploy.yml` runs on every push and pull request:
-
-1. **Quality gate** (always): `npm ci` then `lint`, `test`, `build`.
-2. **On push to `main` only**: auto-bump the patch version (tagged commit
-   marked `[skip ci]`), deploy to Vercel production, and publish a GitHub
-   release.
-
-The scraper routes need the Node.js runtime (pinned per handler), so the app
-deploys to **Vercel**, not a static host.
-
-### Enable deploys
-
-Add these repository secrets (Settings, then Secrets and variables, then
-Actions). Until they exist the deploy step is skipped and the rest of the
-pipeline still runs.
-
-| Secret | Where to find it |
-| --- | --- |
-| `VERCEL_TOKEN` | Vercel, Account Settings, Tokens |
-| `VERCEL_ORG_ID` | run `vercel link` locally, read `.vercel/project.json` |
-| `VERCEL_PROJECT_ID` | same `.vercel/project.json` |
-
-Alternatively, connect the repo in the Vercel dashboard for zero-config push
-deploys (then the workflow's deploy step is redundant).
+Other scripts: `npm run build`, `npm run lint`, `npm test`.
 
 ## Notes
 
-- Scrapes the **public** Play Store listing; assets are whatever the developer
-  uploaded. Icons cap at 512×512 (Play Store limit).
+- Assets belong to their respective developers. App Grabber only fetches the
+  public Play Store listing.
+- Icons cap at 512×512 (Play Store limit).
 - If a name search picks the wrong app, copy the package id from the Play URL
   (`...?id=com.example.app`) and use **By package id**.
-- The original CLI lives in `index.js` for reference; the web app supersedes it.
+
+---
+
+Made by **Guilherme Passos**.
+[GitHub](https://github.com/guilhermeeng99) · [LinkedIn](https://www.linkedin.com/in/guigapassos/)
