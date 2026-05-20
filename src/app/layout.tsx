@@ -12,10 +12,10 @@ const appFont = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "App Grabber: Download Google Play app images in HD",
+  title: "App Grabber: Download Google Play & App Store images in HD",
   description:
-    "Search any Google Play app and download its icon, feature graphic and " +
-    "screenshots in the highest available resolution. Free, no sign-up.",
+    "Search Google Play and the App Store and download app icons, banners " +
+    "and screenshots in the highest available resolution. Free, no sign-up.",
 };
 
 export default function RootLayout({

@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NetworkError, ValidationError } from "@/core/errors";
+import { err } from "@/core/result";
+import { jsonResult } from "@/app/api/_lib/respond";
 import { sanitizeFileName } from "@/app/api/_lib/request-helpers";
 import { isAllowedImageHost } from "@/features/play-assets/data/image-host";
 
 export const runtime = "nodejs";
+
+// Cap each upstream image fetch so a slow CDN cannot hold the connection open.
+const REQUEST_TIMEOUT_MS = 15_000;
 
 /**
  * Proxy a single store image so the browser receives it as a forced
@@ -16,23 +22,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const fileName = sanitizeFileName(request.nextUrl.searchParams.get("name"));
 
   if (!url || !isAllowedImageHost(url)) {
-    return NextResponse.json(
-      {
-        error: {
-          kind: "validation",
-          message: "Missing or disallowed image URL.",
-        },
-      },
-      { status: 400 },
+    return jsonResult(
+      err(new ValidationError("Missing or disallowed image URL.")),
     );
   }
 
-  const upstream = await fetch(url).catch(() => null);
+  const upstream = await fetch(url, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  }).catch(() => null);
   if (!upstream || !upstream.ok || !upstream.body) {
-    return NextResponse.json(
-      { error: { kind: "network", message: "Could not fetch the image." } },
-      { status: 502 },
-    );
+    return jsonResult(err(new NetworkError("Could not fetch the image.")));
   }
 
   return new NextResponse(upstream.body, {

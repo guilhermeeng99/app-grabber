@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   extFromUrl,
+  scaledDownloadUrl,
   withLongestSide,
 } from "@/features/play-assets/data/image-url";
 
@@ -36,5 +37,33 @@ describe("withLongestSide (host dispatch)", () => {
     expect(withLongestSide(`${APPLE}/392x696bb.png`, 348)).toBe(
       `${APPLE}/196x348bb.png`,
     );
+  });
+});
+
+describe("scaledDownloadUrl", () => {
+  it("downloads the original at factor 1", () => {
+    expect(scaledDownloadUrl(`${PLAY}/abc=s0`, { w: 1000, h: 2000 }, 1)).toBe(
+      `${PLAY}/abc=s0`,
+    );
+  });
+
+  it("downloads the original when the size is not yet measured", () => {
+    expect(scaledDownloadUrl(`${PLAY}/abc=s0`, undefined, 0.5)).toBe(
+      `${PLAY}/abc=s0`,
+    );
+  });
+
+  it("scales the longest side by the factor off the measured original", () => {
+    // longest side 2000 × 0.5 → 1000
+    expect(scaledDownloadUrl(`${PLAY}/abc=s0`, { w: 1000, h: 2000 }, 0.5)).toBe(
+      `${PLAY}/abc=s1000`,
+    );
+  });
+
+  it("dispatches to the Apple scheme by host", () => {
+    // longest side 696 × 0.5 → 348, aspect kept
+    expect(
+      scaledDownloadUrl(`${APPLE}/392x696bb.png`, { w: 392, h: 696 }, 0.5),
+    ).toBe(`${APPLE}/196x348bb.png`);
   });
 });

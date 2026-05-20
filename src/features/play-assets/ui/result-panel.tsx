@@ -6,7 +6,7 @@ import type {
   StoreGrabResultDTO,
   ZipItem,
 } from "@/features/play-assets/api/contracts";
-import { withLongestSide } from "@/features/play-assets/data/image-url";
+import { scaledDownloadUrl } from "@/features/play-assets/data/image-url";
 import type {
   AppAsset,
   AppAssetBundle,
@@ -18,7 +18,10 @@ import {
   groupAssetsBySection,
 } from "@/features/play-assets/ui/asset-sections";
 import { downloadZip } from "@/features/play-assets/ui/download-zip";
-import { STORE_ACCENT, StoreBadge } from "@/features/play-assets/ui/store-badge";
+import {
+  STORE_ACCENT,
+  StoreBadge,
+} from "@/features/play-assets/ui/store-badge";
 import { useImageSizes } from "@/features/play-assets/ui/use-image-sizes";
 
 const SIZE_OPTIONS = [
@@ -59,10 +62,7 @@ function BundlePanel({ bundle }: { bundle: AppAssetBundle }) {
   const slug = slugify(bundle.title || bundle.appId);
 
   function scaledUrl(url: string): string {
-    const measured = sizes[url];
-    const original = measured ? Math.max(measured.w, measured.h) : 0;
-    const px = factor === 1 || original === 0 ? 0 : original * factor;
-    return withLongestSide(url, px);
+    return scaledDownloadUrl(url, sizes[url], factor);
   }
 
   async function runZip(

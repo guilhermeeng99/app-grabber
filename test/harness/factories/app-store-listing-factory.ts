@@ -50,7 +50,8 @@ export function makeItunesResult(
     trackId: 310633997,
     bundleId: "net.whatsapp.WhatsApp",
     trackName: "WhatsApp Messenger",
-    trackViewUrl: "https://apps.apple.com/us/app/whatsapp-messenger/id310633997",
+    trackViewUrl:
+      "https://apps.apple.com/us/app/whatsapp-messenger/id310633997",
     artworkUrl512: `${MZ}/icon.png/512x512bb.jpg`,
     artistName: "WhatsApp Inc.",
     screenshotUrls: [`${MZ}/s1.png/392x696bb.png`],

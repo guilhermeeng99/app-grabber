@@ -110,7 +110,10 @@ describe("POST /api/download/zip", () => {
     expect(res.status).toBe(200);
     const magic = await drainFirstBytes(res, 2);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith(ALLOWED);
+    expect(fetchMock).toHaveBeenCalledWith(
+      ALLOWED,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
     expect(magic).toBe("PK");
   });
 });

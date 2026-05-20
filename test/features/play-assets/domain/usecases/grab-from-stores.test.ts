@@ -88,7 +88,10 @@ describe("GrabFromStoresUseCase", () => {
     );
 
     expect(result.outcomes.map((o) => o.store)).toEqual(["appstore"]);
-    expect(appstore.call).toHaveBeenCalledWith({ appId: "310633997", ...locale });
+    expect(appstore.call).toHaveBeenCalledWith({
+      appId: "310633997",
+      ...locale,
+    });
     expect(play.call).not.toHaveBeenCalled();
   });
 

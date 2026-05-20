@@ -33,7 +33,10 @@ describe("GET /api/download", () => {
     expect(res.headers.get("content-disposition")).toBe(
       'attachment; filename="icon.png"',
     );
-    expect(fetchMock).toHaveBeenCalledWith(ALLOWED);
+    expect(fetchMock).toHaveBeenCalledWith(
+      ALLOWED,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
     const body = new Uint8Array(await res.arrayBuffer());
     expect(Array.from(body)).toEqual([1, 2, 3, 4]);
   });
@@ -46,7 +49,10 @@ describe("GET /api/download", () => {
     const res = await GET(makeRequest({ url: apple, name: "icon.jpg" }));
 
     expect(res.status).toBe(200);
-    expect(fetchMock).toHaveBeenCalledWith(apple);
+    expect(fetchMock).toHaveBeenCalledWith(
+      apple,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it("rejects a disallowed host without fetching (SSRF guard)", async () => {

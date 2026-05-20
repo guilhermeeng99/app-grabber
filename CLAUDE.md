@@ -72,17 +72,17 @@ imports nothing outward.
 
 ## Key Technologies
 
-| Aspect              | Detail                                                          |
-| ------------------- | -------------------------------------------------------------- |
-| **Framework**       | Next.js 15 (App Router), React 19, TypeScript (strict)         |
-| **Scraping**        | `google-play-scraper` (Play) + official iTunes Search/Lookup API via `fetch` (App Store); each wrapped behind a DS |
-| **Styling**         | Tailwind CSS v4                                                |
-| **ZIP**             | `archiver` (streamed from the route handler)                   |
-| **Error handling**  | `Result<T, E>` + sealed `AppError` hierarchy (Either analogue) |
-| **State**           | `useReducer` over a pure reducer (Cubit analogue)              |
-| **DI**              | tiny composition root in `features/<f>/di.ts`                  |
-| **Testing**         | Vitest (node env) — domain/data/reducer logic                  |
-| **Linting**         | ESLint (`next/core-web-vitals`, `next/typescript`) + Prettier  |
+| Aspect             | Detail                                                                                                             |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| **Framework**      | Next.js 15 (App Router), React 19, TypeScript (strict)                                                             |
+| **Scraping**       | `google-play-scraper` (Play) + official iTunes Search/Lookup API via `fetch` (App Store); each wrapped behind a DS |
+| **Styling**        | Tailwind CSS v4                                                                                                    |
+| **ZIP**            | `archiver` (streamed from the route handler)                                                                       |
+| **Error handling** | `Result<T, E>` + sealed `AppError` hierarchy (Either analogue)                                                     |
+| **State**          | `useReducer` over a pure reducer (Cubit analogue)                                                                  |
+| **DI**             | tiny composition root in `features/<f>/di.ts`                                                                      |
+| **Testing**        | Vitest (node env) — domain/data/reducer logic                                                                      |
+| **Linting**        | ESLint (`next/core-web-vitals`, `next/typescript`) + Prettier                                                      |
 
 ---
 

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { withLongestSide } from "@/features/play-assets/data/image-url";
+import { scaledDownloadUrl } from "@/features/play-assets/data/image-url";
 import type {
   AppAsset,
   AssetKind,
@@ -22,10 +22,7 @@ interface AssetCardProps {
 
 /** A single asset preview: resolution badge plus a forced-download button. */
 export function AssetCard({ asset, size, factor }: AssetCardProps) {
-  const original = size ? Math.max(size.w, size.h) : 0;
-  // factor 1 (or not-yet-measured) downloads the untouched original.
-  const targetPx = factor === 1 || original === 0 ? 0 : original * factor;
-  const downloadUrl = withLongestSide(asset.url, targetPx);
+  const downloadUrl = scaledDownloadUrl(asset.url, size, factor);
   const downloadHref = `/api/download?url=${encodeURIComponent(
     downloadUrl,
   )}&name=${encodeURIComponent(asset.fileName)}`;

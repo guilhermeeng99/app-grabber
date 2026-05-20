@@ -190,7 +190,7 @@ interface AppStoreDataSource {
 - **Screenshot fallback**: Apple's Lookup/Search API populates
   `screenshotUrls`/`ipadScreenshotUrls` inconsistently — for some apps it
   returns empty arrays even though the listing has screenshots (e.g. Gentler
-  Streak). When the lookup yields no phone *and* no iPad screenshots,
+  Streak). When the lookup yields no phone _and_ no iPad screenshots,
   `ItunesDataSource.app` fetches the listing page (`trackViewUrl`) and parses
   its embedded `serialized-server-data` JSON for the phone/iPad shelves
   (`appstore-page-screenshots.ts`). This is still Apple's own data over the
@@ -289,7 +289,7 @@ unmistakable when both render stacked.
 | Play app with tablet screenshots        | merged phone+tablet list is split by measured aspect into phone & tablet blocks  |
 | App Store id given as numeric or bundle | both resolve (data source routes by shape)                                       |
 | Play / App Store URL pasted as the id   | id + store extracted from the link; the link's store overrides the toggle        |
-| Store URL with no extractable id        | passed through trimmed and unchanged; resolved as a raw id (likely not-found)     |
+| Store URL with no extractable id        | passed through trimmed and unchanged; resolved as a raw id (likely not-found)    |
 | Blank/whitespace term                   | `ValidationError` (rule 8)                                                       |
 | Unknown country/lang                    | defaults to `us`/`en` (rule 9)                                                   |
 | Unknown `store` value (id mode)         | defaults to `play` (rule 14)                                                     |

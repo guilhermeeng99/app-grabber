@@ -36,7 +36,9 @@ export class GrabFromStoresUseCase {
     // store it names. The link's store overrides the request's `store`.
     const ref = rawAppId ? parseStoreAppId(rawAppId) : null;
     const locale = { country: request.country, lang: request.lang };
-    const grabRequest = ref ? { appId: ref.id, ...locale } : { term, ...locale };
+    const grabRequest = ref
+      ? { appId: ref.id, ...locale }
+      : { term, ...locale };
     const stores = ref ? [ref.store ?? request.store ?? "play"] : ALL_STORES;
 
     const outcomes = await Promise.all(

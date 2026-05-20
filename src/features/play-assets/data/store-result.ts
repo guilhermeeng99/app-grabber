@@ -53,5 +53,8 @@ export function toAppError(
   ) {
     return new NetworkError(`Could not reach ${storeName}.`);
   }
-  return new ServerError(message);
+  // Never surface the raw upstream message to the client (it can leak scraper
+  // internals); log it server-side and return a generic, user-safe message.
+  console.error(`[store-result] unexpected error from ${storeName}:`, message);
+  return new ServerError(`Something went wrong reading ${storeName}.`);
 }

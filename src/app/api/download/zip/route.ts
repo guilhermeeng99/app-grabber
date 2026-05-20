@@ -14,6 +14,9 @@ export const runtime = "nodejs";
 // Guard against an oversized request fanning out into many server fetches.
 const MAX_ITEMS = 100;
 
+// Cap each upstream image fetch so a slow CDN cannot stall the ZIP stream.
+const REQUEST_TIMEOUT_MS = 15_000;
+
 /**
  * Stream a set of images as a single ZIP. The client supplies the (already
  * size-scaled) image URLs and file names; the server re-validates every
@@ -46,7 +49,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       for (const item of items) {
         if (!item || typeof item.url !== "string") continue;
         if (!isAllowedImageHost(item.url)) continue;
-        const res = await fetch(item.url).catch(() => null);
+        const res = await fetch(item.url, {
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        }).catch(() => null);
         if (!res || !res.ok) continue;
         const buffer = Buffer.from(await res.arrayBuffer());
         archive.append(buffer, { name: sanitizeFileName(item.fileName) });

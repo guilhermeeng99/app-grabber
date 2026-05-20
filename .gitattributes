@@ -1,0 +1,13 @@
+# Normalise line endings: store LF in the repo and check out LF everywhere.
+# Overrides core.autocrlf so a Windows working copy stays LF and Prettier's
+# endOfLine check does not trip locally. Binary assets are left untouched.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary

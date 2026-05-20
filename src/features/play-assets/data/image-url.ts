@@ -25,3 +25,20 @@ export function withLongestSide(url: string, px: number): string {
     ? appStoreWithLongestSide(url, px)
     : playWithLongestSide(url, px);
 }
+
+/**
+ * Resolve an asset's download URL for the active size multiplier. `factor` 1
+ * (or a not-yet-measured asset, `size` undefined) downloads the untouched
+ * original; otherwise the longest side is scaled by `factor` off the measured
+ * original. The single home for the size math shared by the per-card and
+ * per-ZIP download paths.
+ */
+export function scaledDownloadUrl(
+  url: string,
+  size: { w: number; h: number } | undefined,
+  factor: number,
+): string {
+  const original = size ? Math.max(size.w, size.h) : 0;
+  const px = factor === 1 || original === 0 ? 0 : original * factor;
+  return withLongestSide(url, px);
+}
