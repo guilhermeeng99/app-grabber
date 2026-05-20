@@ -13,7 +13,7 @@ interface AssetCardProps {
   asset: AppAsset;
   /** Measured original dimensions, once known. */
   size?: PixelSize;
-  /** Global download multiplier (0.5, 1, 2). */
+  /** Global download multiplier (0.3, 0.5, 1). */
   factor: number;
 }
 

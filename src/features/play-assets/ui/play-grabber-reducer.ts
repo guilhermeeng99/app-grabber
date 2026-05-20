@@ -27,7 +27,7 @@ export const initialGrabState: GrabState = {
 /**
  * Pure UI state machine — the analogue of a financo Cubit's emitted
  * states. Kept free of React so it can be unit-tested directly
- * (see `use-play-grabber.test.ts`).
+ * (see `play-grabber-reducer.test.ts`).
  *
  *   idle ──submit──▶ loading ──loaded──▶ loaded
  *                            └──error──▶ error

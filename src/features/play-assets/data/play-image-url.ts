@@ -14,7 +14,7 @@ export function maxRes(url: string): string {
  * Re-target a Play image URL to a specific longest-side pixel size by
  * replacing its size suffix with `=s<px>`. `px <= 0` returns the original
  * (`=s0`). Google only downscales, so requesting more than the source has
- * returns the source size (the basis for the 0.5x/1x/2x picker).
+ * returns the source size. Drives the 0.3x/0.5x/1x download-size picker.
  */
 export function withLongestSide(url: string, px: number): string {
   const stripped = url.replace(/=[^/]*$/, "");
