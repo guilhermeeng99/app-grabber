@@ -57,7 +57,9 @@ export class ItunesDataSource implements AppStoreDataSource {
       country: query.country,
       lang: query.lang,
       entity: "software",
-      limit: "1", // the repository only keeps the top match
+      // Fetch a small page (the repository keeps the top match); matches the
+      // Play side's page size and is robust against a thin top result.
+      limit: "5",
     });
     return this.fetchApps(`${SEARCH_URL}?${params}`);
   }

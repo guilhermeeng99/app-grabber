@@ -4,13 +4,18 @@
 > **Last updated**: 2026-05-20
 > **Coverage**: Entities, Business Rules, Repository, Data Source, Use Cases, API, UI State Machine, Edge Cases, Security
 
-The single feature of App Grabber: given an app name or id, a target store
-(Google Play or the App Store) and a locale, resolve the listing and expose
-every downloadable image at its maximum resolution, individually or as a ZIP.
+The single feature of App Grabber: given an app name (or an exact store id)
+and a locale, resolve the listing(s) and expose every downloadable image at
+its maximum resolution, grouped by section (icon / banner / phone / tablet),
+individually or as per-section / full ZIPs.
+
+A **name** search runs against **both** stores at once and returns one
+outcome per store (each may independently succeed or fail). An **id** search
+targets the single store the id belongs to.
 
 The two stores share one domain, one set of use cases and one UI; they
 differ only in `data/` (one scraper, mapper and image resolver each) and in
-which repository the composition root wires per request.
+which repository the composition root wires per store.
 
 ## 1. Entity Contract
 
@@ -20,14 +25,18 @@ which repository the composition root wires per request.
 
 ### AppAsset
 
-| Field    | Type        | Notes                                                       |
-| -------- | ----------- | ----------------------------------------------------------- |
-| kind     | `AssetKind` | `icon` \| `featureGraphic` \| `screenshot`                  |
-| name     | `string`    | Stable slug: `icon`, `feature-graphic`, `screenshot-01`, …  |
-| fileName | `string`    | Download name, e.g. `screenshot-01.png`                     |
-| url      | `string`    | Max-resolution URL on the store's image CDN                 |
+| Field    | Type           | Notes                                                                                 |
+| -------- | -------------- | ------------------------------------------------------------------------------------- |
+| kind     | `AssetKind`    | `icon` \| `featureGraphic` \| `screenshot`                                            |
+| section  | `AssetSection` | `icon` \| `banner` \| `phone` \| `tablet` — drives UI grouping + per-section download |
+| name     | `string`       | Stable slug: `icon`, `feature-graphic`, `screenshot-01`, …                            |
+| fileName | `string`       | Download name, e.g. `screenshot-01.png`                                               |
+| url      | `string`       | Max-resolution URL on the store's image CDN                                           |
 
-`featureGraphic` is Google Play only; the App Store has no equivalent.
+`featureGraphic` (section `banner`) is Google Play only; the App Store has
+no equivalent. The `tablet` section is App Store only (iPad screenshots);
+Play screenshots are all `phone`. `section` is set by each store's mapper so
+the UI groups assets without parsing names.
 
 ### AppSummary (a single search hit)
 
@@ -65,8 +74,14 @@ so use cases and entities stay store-agnostic.
    set produces no entry (no placeholder).
 5. **File extension**: derived from the URL
    (`.png/.jpg/.jpeg/.webp/.gif`), defaulting to `.png` when undetectable.
-6. **Search returns the top match only**: `num: 1`; the first result wins
-   (both stores).
+6. **Search returns the top match only**: the data source fetches a small
+   page (`num: 5` on Play, `limit: 5` on the App Store) and the repository
+   keeps the first hit. Fetching >1 is deliberate: Google's search-page
+   parser intermittently returns `[]` for `num: 1`, so a slightly larger
+   page is far more reliable. Play search additionally **retries once on an
+   empty result** (~800ms backoff) and **caches non-empty results** for a
+   few minutes, both to absorb Google's rate-limiting (empty responses are
+   never cached, so a throttled miss is retried, not memoised).
 7. **Id skips search**: when `appId` is provided it is used directly and
    `term` is ignored. A Play id is a package name (`com.x`); an App Store id
    is a numeric track id (`310633997`) or a bundle id
@@ -85,16 +100,35 @@ so use cases and entities stay store-agnostic.
     original image, and shown on each card as `w×h`.
 13. **ZIP** receives the (already size-scaled) URLs + file names from the
     client; the server re-validates every host before fetching (see §9).
-14. **Store selection**: the request's `store` (`play` | `appstore`,
-    defaulting to `play` when absent or unknown) selects the repository in
-    `di.ts`. Everything downstream is identical.
+14. **Store selection**:
+    - **By name** (`term`, no `appId`): both stores are resolved in parallel;
+      the response carries one outcome per store. A store that fails (not
+      found, network, throttle) yields an error outcome without affecting
+      the other.
+    - **By id** (`appId`): only the store given by `store` (`play` |
+      `appstore`, defaulting to `play` when absent or unknown) is resolved;
+      the response carries that single outcome. The id shape is store-bound
+      (Play package vs App Store numeric/bundle id), so id search is never
+      cross-store.
+15. **Asset sections**: every asset carries a `section` (`icon` | `banner` |
+    `phone` | `tablet`), set by the store's mapper. The UI renders one block
+    per non-empty section, in the order icon, banner, phone, tablet.
+16. **Per-section download**: each section block offers its own ZIP
+    (`<slug>-<section>.zip`) alongside the bundle-wide "Download all"
+    (`<slug>.zip`). Both reuse `/api/download/zip` with the section's items.
+17. **Per-store errors are surfaced**: an error outcome shows the store, the
+    error `kind` and its message (e.g. "No app found", "Could not reach the
+    App Store"), so a failure is legible rather than a generic banner.
 
 ## 3. Repository Contract
 
 ```ts
 interface StoreAssetsRepository {
   search(query: SearchQuery): Promise<Result<AppSummary>>;
-  getAssets(appId: string, locale: StoreLocale): Promise<Result<AppAssetBundle>>;
+  getAssets(
+    appId: string,
+    locale: StoreLocale,
+  ): Promise<Result<AppAssetBundle>>;
 }
 ```
 
@@ -130,34 +164,52 @@ interface AppStoreDataSource {
   (backed by Apple's official iTunes Search/Lookup APIs via built-in `fetch`,
   no third-party scraper) are the live implementations. Each is the **only**
   module that touches its store's external boundary.
-- `search` keeps a single match (`num: 1` on Play, `limit=1` on the App
-  Store).
+- `search` fetches a small page (`num: 5` on Play, `limit: 5` on the App
+  Store); the repository keeps the first hit (rule 6).
+- `GplayDataSource.search` wraps the call in `retry` (one extra attempt on an
+  empty result, ~800ms backoff) and a `TtlCache` (non-empty results cached a
+  few minutes, keyed by `term|country|lang`). Both counter Google's
+  rate-limiting; see `core/utils/{retry,ttl-cache}.ts`.
 - `ItunesDataSource.app` queries by `id` for a numeric id and by `bundleId`
   otherwise; an empty lookup throws so the repository maps it to NotFound.
 
 ## 5. Use Cases
 
-| Use case               | `call(...)`                                  | Delegates to          |
-| ---------------------- | -------------------------------------------- | --------------------- |
-| `SearchAppUseCase`     | `(SearchQuery) → Result<AppSummary>`         | `repo.search`         |
-| `GetAppAssetsUseCase`  | `(appId, StoreLocale) → Result<AppAssetBundle>` | `repo.getAssets`   |
-| `GrabAppAssetsUseCase` | `(GrabRequest) → Result<AppAssetBundle>`     | the two above         |
+| Use case                | `call(...)`                                     | Delegates to                     |
+| ----------------------- | ----------------------------------------------- | -------------------------------- |
+| `SearchAppUseCase`      | `(SearchQuery) → Result<AppSummary>`            | `repo.search`                    |
+| `GetAppAssetsUseCase`   | `(appId, StoreLocale) → Result<AppAssetBundle>` | `repo.getAssets`                 |
+| `GrabAppAssetsUseCase`  | `(GrabRequest) → Result<AppAssetBundle>`        | the two above (single store)     |
+| `GrabFromStoresUseCase` | `(MultiGrabRequest) → Result<MultiGrabResult>`  | per-store `GrabAppAssetsUseCase` |
 
-`GrabAppAssetsUseCase` orchestrates rule 7/8: use `appId` directly when
-present; otherwise validate the term, search, then fetch assets for the
-match. A failed search short-circuits (assets are not fetched). The use
+`GrabAppAssetsUseCase` orchestrates rule 7/8 for one store: use `appId`
+directly when present; otherwise validate the term, search, then fetch
+assets. A failed search short-circuits (assets are not fetched). The use
 cases are store-agnostic: `di.ts` injects the store-specific repository.
+
+`GrabFromStoresUseCase` orchestrates rule 14: it validates that a term or id
+is present (else `ValidationError`), then runs the per-store grabbers — both
+stores for a name search, the one selected store for an id search — in
+parallel. It never fails as a whole once input is valid; each store's
+`Result<AppAssetBundle>` is captured as a `StoreGrabOutcome { store, result }`
+inside `MultiGrabResult { outcomes }`.
 
 ## 6. API Contract
 
-| Route                    | Method | Input                                  | Success            | Errors                        |
-| ------------------------ | ------ | -------------------------------------- | ------------------ | ----------------------------- |
-| `/api/assets`            | POST   | JSON `AssetsRequestBody`               | `AppAssetBundle`   | 400 / 404 / 502 / 500         |
-| `/api/download`          | GET    | `?url=&name=`                          | image stream (attachment) | 400 (bad/disallowed url), 502 |
-| `/api/download/zip`      | POST   | JSON `{ zipName?, items[] }`           | `application/zip` stream | 400 (empty / >100 items)      |
+| Route               | Method | Input                        | Success                             | Errors                        |
+| ------------------- | ------ | ---------------------------- | ----------------------------------- | ----------------------------- |
+| `/api/assets`       | POST   | JSON `AssetsRequestBody`     | `{ results: StoreGrabResultDTO[] }` | 400 (no input / bad JSON)     |
+| `/api/download`     | GET    | `?url=&name=`                | image stream (attachment)           | 400 (bad/disallowed url), 502 |
+| `/api/download/zip` | POST   | JSON `{ zipName?, items[] }` | `application/zip` stream            | 400 (empty / >100 items)      |
 
-- `AssetsRequestBody` adds an optional `store` (`play` | `appstore`); an
-  absent or unrecognised value falls back to `play`.
+- `AssetsRequestBody` carries `term?`, `appId?`, optional `store` (`play` |
+  `appstore`, used only in id mode; absent/unrecognised → `play`), and
+  locale. A name search ignores `store` and resolves both stores.
+- `POST /api/assets` succeeds (200) with one `StoreGrabResultDTO` per
+  resolved store: `{ store, bundle? , error? }` — `bundle` on success,
+  `error: { kind, message }` on a per-store failure. The route only returns
+  a top-level error envelope for request-level failures (missing input,
+  malformed JSON → 400); not-found/network/throttle live inside `results`.
 - Error body is the uniform envelope `{ error: { kind, message } }`.
 - HTTP status is derived from the error kind by `toHttpStatus`
   (validation→400, notFound→404, network→502, server→500).
@@ -168,37 +220,46 @@ cases are store-agnostic: `di.ts` injects the store-specific repository.
 `playGrabberReducer(state, action)` — pure, the Cubit analogue:
 
 ```
-State: { status, bundle, errorMessage, request }
+State: { status, results, errorMessage, request }
 status ∈ idle | loading | loaded | error
 
-idle ──submit(request)──▶ loading       (clears bundle + error, stores request)
-loading ──loaded(bundle)─▶ loaded        (keeps request)
-loading ──error(message)─▶ error         (keeps request, clears bundle)
+idle ──submit(request)──▶ loading        (clears results + error, stores request)
+loading ──loaded(results)─▶ loaded        (keeps request; results = per-store outcomes)
+loading ──error(message)──▶ error         (request-level failure only; clears results)
 (any) ──submit──▶ loading
 (any) ──reset──▶ idle (initial state)
 ```
 
 `usePlayGrabber` is the only React binding: it dispatches `submit`,
-performs `POST /api/assets`, and dispatches `loaded`/`error`. The search
-form carries the store toggle (Google Play / App Store) and includes it in
-the request. The result view reads `bundle.store`/`bundle.listingUrl` for
-the store link and label.
+performs `POST /api/assets`, and dispatches `loaded` with the `results`
+array (or `error` for a request-level failure). The search form shows the
+store toggle (Google Play / App Store) **only in id mode**; a name search
+omits it and queries both stores. **Id mode is the default** because Google
+Play's name search is rate-limited and flaky; selecting **name** mode shows
+a warning to that effect (it blames Google Play, notes the App Store stays
+reliable, and offers a shortcut back to id). The loaded view renders one
+panel per result — a sectioned asset panel reading
+`bundle.store`/`bundle.listingUrl` on success, or a per-store error banner
+on failure.
 
 ## 8. Edge Cases
 
-| Scenario                                  | Expected behavior                                            |
-| ----------------------------------------- | ----------------------------------------------------------- |
-| Empty search results                      | `NotFoundError` → 404, UI shows the error banner            |
-| App id does not exist                     | scraper throws 404 → `NotFoundError`                        |
-| Listing with zero images                  | `AppAssetBundle` with empty `assets`; UI shows empty state, no ZIP button |
-| iPhone-only App Store app                 | no iPad screenshots; icon + iPhone screenshots only          |
-| App Store id given as numeric or bundle   | both resolve (data source routes by shape)                  |
-| Blank/whitespace term                     | `ValidationError` (rule 8)                                  |
-| Unknown country/lang                      | defaults to `us`/`en` (rule 9)                              |
-| Unknown `store` value                     | defaults to `play` (rule 14)                                |
-| One asset fails to download in the ZIP    | that asset is skipped; the ZIP still completes              |
-| Network failure reaching a store          | `NetworkError` → 502                                        |
-| Malformed JSON body on `/api/assets`      | `ValidationError` → 400                                     |
+| Scenario                                | Expected behavior                                                                |
+| --------------------------------------- | -------------------------------------------------------------------------------- |
+| Empty search results (one store)        | that store's outcome is a `notFound` error banner; the other store still renders |
+| Name search, only one store has the app | the found store shows assets; the other shows a not-found banner                 |
+| Both stores fail a name search          | 200 with two error outcomes; each store's banner is shown                        |
+| Play search throttled (empty)           | retried once (~800ms); if still empty → `notFound` outcome, not cached           |
+| App id does not exist                   | scraper throws 404 → `NotFoundError` outcome for that store                      |
+| Listing with zero images                | `AppAssetBundle` with empty `assets`; UI shows empty state, no ZIP button        |
+| iPhone-only App Store app               | no iPad screenshots; icon + iPhone screenshots only                              |
+| App Store id given as numeric or bundle | both resolve (data source routes by shape)                                       |
+| Blank/whitespace term                   | `ValidationError` (rule 8)                                                       |
+| Unknown country/lang                    | defaults to `us`/`en` (rule 9)                                                   |
+| Unknown `store` value (id mode)         | defaults to `play` (rule 14)                                                     |
+| One asset fails to download in the ZIP  | that asset is skipped; the ZIP still completes                                   |
+| Network failure reaching a store        | `NetworkError` → 502                                                             |
+| Malformed JSON body on `/api/assets`    | `ValidationError` → 400                                                          |
 
 ## 9. Security
 

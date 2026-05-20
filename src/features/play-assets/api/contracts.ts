@@ -10,7 +10,8 @@ import type {
 
 /** Body of `POST /api/assets`. */
 export interface AssetsRequestBody {
-  /** Which store to target; defaults to "play". */
+  /** Store for an `appId` (id mode only); a name search ignores it and
+   * queries both stores. Defaults to "play". */
   store?: StoreId;
   /** App name to search for; ignored when `appId` is present. */
   term?: string;
@@ -43,5 +44,20 @@ export interface ApiErrorBody {
   error: { kind: string; message: string };
 }
 
-/** Success body of `POST /api/assets` is the bundle itself. */
-export type AssetsResponse = AppAssetBundle | ApiErrorBody;
+/**
+ * One store's outcome in a multi-store grab: `bundle` on success, `error` on
+ * a per-store failure (not found / network / throttle). Exactly one is set.
+ */
+export interface StoreGrabResultDTO {
+  store: StoreId;
+  bundle?: AppAssetBundle;
+  error?: { kind: string; message: string };
+}
+
+/** Success body of `POST /api/assets`: one result per resolved store. */
+export interface AssetsSuccessBody {
+  results: StoreGrabResultDTO[];
+}
+
+/** A request-level failure (bad JSON / no input) still uses the envelope. */
+export type AssetsResponse = AssetsSuccessBody | ApiErrorBody;

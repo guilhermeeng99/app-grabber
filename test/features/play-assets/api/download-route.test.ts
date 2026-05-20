@@ -79,9 +79,7 @@ describe("GET /api/download", () => {
   it("sanitizes the download file name into the header", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(imageResponse()));
 
-    const res = await GET(
-      makeRequest({ url: ALLOWED, name: 'a/b"c\nd.png' }),
-    );
+    const res = await GET(makeRequest({ url: ALLOWED, name: 'a/b"c\nd.png' }));
 
     expect(res.headers.get("content-disposition")).toBe(
       'attachment; filename="abcd.png"',

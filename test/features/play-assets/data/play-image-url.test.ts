@@ -32,6 +32,8 @@ describe("withLongestSide (Google Play)", () => {
   });
 
   it("replaces an existing size suffix", () => {
-    expect(withLongestSide(`${CDN}/abc=w526-h296`, 256)).toBe(`${CDN}/abc=s256`);
+    expect(withLongestSide(`${CDN}/abc=w526-h296`, 256)).toBe(
+      `${CDN}/abc=s256`,
+    );
   });
 });

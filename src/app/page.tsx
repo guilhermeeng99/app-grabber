@@ -8,9 +8,9 @@ export default function HomePage() {
           App Grabber
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-balance text-lg text-slate-blue">
-          Download a Google Play app&apos;s icon, feature graphic and
-          screenshots in the highest available resolution. Just type the app
-          name.
+          Search Google Play and the App Store at once. Download icons, banners
+          and screenshots (phone and tablet) at the highest available
+          resolution, neatly grouped by section.
         </p>
       </header>
 
@@ -19,7 +19,7 @@ export default function HomePage() {
       <footer className="mt-20 text-center text-sm text-steel-gray">
         <p>
           Assets belong to their respective developers. App Grabber only fetches
-          the public Play Store listing.
+          public Google Play and App Store listings.
         </p>
         <p className="mt-2">
           Built by Guilherme Passos ·{" "}

@@ -66,7 +66,10 @@ describe("POST /api/download/zip", () => {
     vi.stubGlobal("fetch", imageFetchMock());
 
     const res = await POST(
-      makeRequest({ zipName: "myapp", items: [{ url: ALLOWED, fileName: "icon.png" }] }),
+      makeRequest({
+        zipName: "myapp",
+        items: [{ url: ALLOWED, fileName: "icon.png" }],
+      }),
     );
 
     expect(res.headers.get("content-disposition")).toBe(

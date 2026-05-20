@@ -21,7 +21,9 @@ const MAX_ITEMS = 100;
  * still cannot trigger SSRF. A failed item is skipped, not fatal.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const body = (await request.json().catch(() => null)) as ZipRequestBody | null;
+  const body = (await request
+    .json()
+    .catch(() => null)) as ZipRequestBody | null;
   const items = Array.isArray(body?.items) ? body.items : [];
 
   if (items.length === 0) {

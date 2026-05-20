@@ -43,7 +43,9 @@ describe("AppStoreAssetsRepositoryImpl", () => {
       vi.mocked(dataSource.search).mockRejectedValue(
         new Error("App not found (404)"),
       );
-      const error = expectErr(await repository.search({ term: "x", ...locale }));
+      const error = expectErr(
+        await repository.search({ term: "x", ...locale }),
+      );
       expect(error.kind).toBe("notFound");
     });
 
@@ -51,7 +53,9 @@ describe("AppStoreAssetsRepositoryImpl", () => {
       vi.mocked(dataSource.search).mockRejectedValue(
         new Error("getaddrinfo ENOTFOUND itunes.apple.com"),
       );
-      const error = expectErr(await repository.search({ term: "x", ...locale }));
+      const error = expectErr(
+        await repository.search({ term: "x", ...locale }),
+      );
       expect(error.kind).toBe("network");
     });
   });

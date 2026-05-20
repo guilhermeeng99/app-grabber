@@ -5,8 +5,8 @@ import type {
   ApiErrorBody,
   AssetsRequestBody,
   AssetsResponse,
+  AssetsSuccessBody,
 } from "@/features/play-assets/api/contracts";
-import type { AppAssetBundle } from "@/features/play-assets/domain/entities";
 import {
   initialGrabState,
   playGrabberReducer,
@@ -30,6 +30,8 @@ export function usePlayGrabber() {
       });
       const body = (await response.json()) as AssetsResponse;
 
+      // A request-level failure (bad input / bad JSON) uses the envelope;
+      // per-store misses arrive inside `results` and are shown per panel.
       if (!response.ok || isApiError(body)) {
         const message = isApiError(body)
           ? body.error.message
@@ -38,7 +40,10 @@ export function usePlayGrabber() {
         return;
       }
 
-      dispatch({ type: "loaded", bundle: body as AppAssetBundle });
+      dispatch({
+        type: "loaded",
+        results: (body as AssetsSuccessBody).results,
+      });
     } catch {
       dispatch({
         type: "error",

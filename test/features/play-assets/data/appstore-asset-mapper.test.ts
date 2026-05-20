@@ -18,6 +18,12 @@ describe("buildAssets (App Store)", () => {
       "screenshot",
       "screenshot",
     ]);
+    expect(assets.map((a) => a.section)).toEqual([
+      "icon",
+      "phone",
+      "phone",
+      "tablet",
+    ]);
   });
 
   it("never produces a feature graphic (the App Store has none)", () => {

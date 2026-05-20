@@ -18,10 +18,7 @@ export function makeRawAppStoreApp(
     url: "https://apps.apple.com/us/app/whatsapp-messenger/id310633997",
     icon: `${MZ}/icon.png/512x512bb.jpg`,
     developer: "WhatsApp Inc.",
-    screenshots: [
-      `${MZ}/s1.png/392x696bb.png`,
-      `${MZ}/s2.png/392x696bb.png`,
-    ],
+    screenshots: [`${MZ}/s1.png/392x696bb.png`, `${MZ}/s2.png/392x696bb.png`],
     ipadScreenshots: [`${MZ}/ipad1.png/576x768bb.png`],
     appletvScreenshots: [],
     ...overrides,

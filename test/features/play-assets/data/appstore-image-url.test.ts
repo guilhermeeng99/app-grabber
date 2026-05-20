@@ -4,7 +4,8 @@ import {
   withLongestSide,
 } from "@/features/play-assets/data/appstore-image-url";
 
-const BASE = "https://is1-ssl.mzstatic.com/image/thumb/Purple/v4/ab/cd/ef/s.png";
+const BASE =
+  "https://is1-ssl.mzstatic.com/image/thumb/Purple/v4/ab/cd/ef/s.png";
 
 describe("maxRes (App Store)", () => {
   it("scales a square token up to the max box", () => {
@@ -17,7 +18,9 @@ describe("maxRes (App Store)", () => {
   });
 
   it("preserves the crop code and quality suffix", () => {
-    expect(maxRes(`${BASE}/300x300sr-90.png`)).toBe(`${BASE}/9999x9999sr-90.png`);
+    expect(maxRes(`${BASE}/300x300sr-90.png`)).toBe(
+      `${BASE}/9999x9999sr-90.png`,
+    );
   });
 
   it("leaves a 0x0 (already-source) token untouched", () => {

@@ -79,7 +79,9 @@ describe("GrabAppAssetsUseCase", () => {
   });
 
   it("propagates a failed search without fetching assets", async () => {
-    vi.mocked(repository.search).mockResolvedValue(err(new NotFoundError("nope")));
+    vi.mocked(repository.search).mockResolvedValue(
+      err(new NotFoundError("nope")),
+    );
 
     const error = expectErr(
       await grab.call({ term: "ghost", country: "us", lang: "en" }),

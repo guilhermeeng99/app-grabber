@@ -1,25 +1,29 @@
-import type { AssetsRequestBody } from "@/features/play-assets/api/contracts";
-import type { AppAssetBundle } from "@/features/play-assets/domain/entities";
+import type {
+  AssetsRequestBody,
+  StoreGrabResultDTO,
+} from "@/features/play-assets/api/contracts";
 
 export type GrabStatus = "idle" | "loading" | "loaded" | "error";
 
 export interface GrabState {
   readonly status: GrabStatus;
-  readonly bundle: AppAssetBundle | null;
+  /** One outcome per resolved store (bundle or per-store error). */
+  readonly results: StoreGrabResultDTO[] | null;
+  /** Request-level failure only (bad input / network to our own API). */
   readonly errorMessage: string | null;
-  /** Request that produced the current bundle — reused to build the ZIP link. */
+  /** Request that produced the current results — reused to rebuild ZIP links. */
   readonly request: AssetsRequestBody | null;
 }
 
 export type GrabAction =
   | { type: "submit"; request: AssetsRequestBody }
-  | { type: "loaded"; bundle: AppAssetBundle }
+  | { type: "loaded"; results: StoreGrabResultDTO[] }
   | { type: "error"; message: string }
   | { type: "reset" };
 
 export const initialGrabState: GrabState = {
   status: "idle",
-  bundle: null,
+  results: null,
   errorMessage: null,
   request: null,
 };
@@ -27,7 +31,9 @@ export const initialGrabState: GrabState = {
 /**
  * Pure UI state machine — the analogue of a financo Cubit's emitted
  * states. Kept free of React so it can be unit-tested directly
- * (see `play-grabber-reducer.test.ts`).
+ * (see `play-grabber-reducer.test.ts`). `loaded` carries the per-store
+ * results (each may itself be a success or a failure); `error` is reserved
+ * for request-level failures, not a single store's miss.
  *
  *   idle ──submit──▶ loading ──loaded──▶ loaded
  *                            └──error──▶ error
@@ -41,7 +47,7 @@ export function playGrabberReducer(
     case "submit":
       return {
         status: "loading",
-        bundle: null,
+        results: null,
         errorMessage: null,
         request: action.request,
       };
@@ -49,14 +55,14 @@ export function playGrabberReducer(
       return {
         ...state,
         status: "loaded",
-        bundle: action.bundle,
+        results: action.results,
         errorMessage: null,
       };
     case "error":
       return {
         ...state,
         status: "error",
-        bundle: null,
+        results: null,
         errorMessage: action.message,
       };
     case "reset":

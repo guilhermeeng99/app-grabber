@@ -8,7 +8,10 @@ import type {
 } from "@/features/play-assets/domain/entities";
 import type { StoreAssetsRepository } from "@/features/play-assets/domain/repository";
 import { buildAssets } from "@/features/play-assets/data/appstore-asset-mapper";
-import { toAppError, topSummary } from "@/features/play-assets/data/store-result";
+import {
+  toAppError,
+  topSummary,
+} from "@/features/play-assets/data/store-result";
 import type { AppStoreDataSource } from "@/features/play-assets/data/app-store-datasource";
 
 const STORE_NAME = "the App Store";

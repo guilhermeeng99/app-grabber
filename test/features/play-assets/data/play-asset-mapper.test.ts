@@ -26,6 +26,12 @@ describe("buildAssets (Google Play)", () => {
       "screenshot",
       "screenshot",
     ]);
+    expect(assets.map((a) => a.section)).toEqual([
+      "icon",
+      "banner",
+      "phone",
+      "phone",
+    ]);
   });
 
   it("normalises every URL to maximum resolution", () => {
@@ -41,7 +47,11 @@ describe("buildAssets (Google Play)", () => {
 
   it("skips a missing icon and feature graphic", () => {
     const assets = buildAssets(
-      makeRawApp({ icon: "", headerImage: "", screenshots: [`${CDN}/s1=w300`] }),
+      makeRawApp({
+        icon: "",
+        headerImage: "",
+        screenshots: [`${CDN}/s1=w300`],
+      }),
     );
     expect(assets).toHaveLength(1);
     expect(assets[0]?.name).toBe("screenshot-01");

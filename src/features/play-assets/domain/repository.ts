@@ -18,5 +18,8 @@ export interface StoreAssetsRepository {
   search(query: SearchQuery): Promise<Result<AppSummary>>;
 
   /** Fetch the full listing for an exact id and build its assets. */
-  getAssets(appId: string, locale: StoreLocale): Promise<Result<AppAssetBundle>>;
+  getAssets(
+    appId: string,
+    locale: StoreLocale,
+  ): Promise<Result<AppAssetBundle>>;
 }

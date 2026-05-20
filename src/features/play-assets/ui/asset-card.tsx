@@ -1,6 +1,9 @@
 import Image from "next/image";
 import { withLongestSide } from "@/features/play-assets/data/image-url";
-import type { AppAsset, AssetKind } from "@/features/play-assets/domain/entities";
+import type {
+  AppAsset,
+  AssetKind,
+} from "@/features/play-assets/domain/entities";
 import type { PixelSize } from "@/features/play-assets/ui/use-image-sizes";
 
 const KIND_LABEL: Record<AssetKind, string> = {

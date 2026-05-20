@@ -26,7 +26,9 @@ describe("PlayAssetsRepositoryImpl", () => {
         makeRawSearchItem({ appId: "com.y", title: "Y" }),
       ]);
 
-      const summary = expectOk(await repository.search({ term: "x", ...locale }));
+      const summary = expectOk(
+        await repository.search({ term: "x", ...locale }),
+      );
 
       expect(summary.appId).toBe("com.x");
       expect(summary.title).toBe("X");
@@ -34,7 +36,9 @@ describe("PlayAssetsRepositoryImpl", () => {
 
     it("returns NotFound when there are no results", async () => {
       vi.mocked(dataSource.search).mockResolvedValue([]);
-      const error = expectErr(await repository.search({ term: "ghost", ...locale }));
+      const error = expectErr(
+        await repository.search({ term: "ghost", ...locale }),
+      );
       expect(error.kind).toBe("notFound");
     });
 
@@ -42,7 +46,9 @@ describe("PlayAssetsRepositoryImpl", () => {
       vi.mocked(dataSource.search).mockRejectedValue(
         new Error("Request failed with status code 404"),
       );
-      const error = expectErr(await repository.search({ term: "x", ...locale }));
+      const error = expectErr(
+        await repository.search({ term: "x", ...locale }),
+      );
       expect(error.kind).toBe("notFound");
     });
 
@@ -50,7 +56,9 @@ describe("PlayAssetsRepositoryImpl", () => {
       vi.mocked(dataSource.search).mockRejectedValue(
         new Error("getaddrinfo ENOTFOUND play.google.com"),
       );
-      const error = expectErr(await repository.search({ term: "x", ...locale }));
+      const error = expectErr(
+        await repository.search({ term: "x", ...locale }),
+      );
       expect(error.kind).toBe("network");
     });
   });

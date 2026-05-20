@@ -1,10 +1,10 @@
 "use client";
 
-import { AssetGrid } from "@/features/play-assets/ui/asset-grid";
+import { ResultPanel } from "@/features/play-assets/ui/result-panel";
 import { SearchForm } from "@/features/play-assets/ui/search-form";
 import { usePlayGrabber } from "@/features/play-assets/ui/use-play-grabber";
 
-/** Top-level client island: wires the search form to the result view. */
+/** Top-level client island: wires the search form to the per-store results. */
 export function PlayGrabber() {
   const { state, grab } = usePlayGrabber();
 
@@ -18,7 +18,7 @@ export function PlayGrabber() {
           className="flex items-center justify-center gap-3 py-6 text-slate-blue"
         >
           <span className="size-5 animate-spin rounded-full border-2 border-pale-gray border-t-action-blue" />
-          Fetching the listing...
+          Fetching the listings...
         </div>
       )}
 
@@ -31,9 +31,10 @@ export function PlayGrabber() {
         </p>
       )}
 
-      {state.status === "loaded" && state.bundle && (
-        <AssetGrid bundle={state.bundle} />
-      )}
+      {state.status === "loaded" &&
+        state.results?.map((result) => (
+          <ResultPanel key={result.store} result={result} />
+        ))}
     </div>
   );
 }

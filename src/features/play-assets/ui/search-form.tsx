@@ -21,13 +21,15 @@ const ID_PLACEHOLDER: Record<StoreId, string> = {
 };
 
 const ID_LABEL: Record<StoreId, string> = {
-  play: "By package id",
-  appstore: "By App Store id",
+  play: "Play package id",
+  appstore: "App Store id",
 };
 
 export function SearchForm({ onSubmit, loading }: SearchFormProps) {
+  // Default to id: Google Play's name search is rate-limited and flaky, so the
+  // exact-id path is the reliable one to land on first.
+  const [mode, setMode] = useState<SearchMode>("id");
   const [store, setStore] = useState<StoreId>("play");
-  const [mode, setMode] = useState<SearchMode>("name");
   const [term, setTerm] = useState("");
   const [appId, setAppId] = useState("");
   const [country, setCountry] = useState("us");
@@ -39,9 +41,11 @@ export function SearchForm({ onSubmit, loading }: SearchFormProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
+    // A name search omits `store` so the server queries both stores; an id
+    // search is store-bound (the id shape belongs to one store).
     onSubmit(
       mode === "name"
-        ? { store, term: term.trim(), country, lang }
+        ? { term: term.trim(), country, lang }
         : { store, appId: appId.trim(), country, lang },
     );
   }
@@ -54,19 +58,6 @@ export function SearchForm({ onSubmit, loading }: SearchFormProps) {
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-full bg-cloud-mist p-1">
           <ModeTab
-            active={store === "play"}
-            onClick={() => setStore("play")}
-            label="Google Play"
-          />
-          <ModeTab
-            active={store === "appstore"}
-            onClick={() => setStore("appstore")}
-            label="App Store"
-          />
-        </div>
-
-        <div className="inline-flex rounded-full bg-cloud-mist p-1">
-          <ModeTab
             active={mode === "name"}
             onClick={() => setMode("name")}
             label="By name"
@@ -74,9 +65,24 @@ export function SearchForm({ onSubmit, loading }: SearchFormProps) {
           <ModeTab
             active={mode === "id"}
             onClick={() => setMode("id")}
-            label={ID_LABEL[store]}
+            label="By id"
           />
         </div>
+
+        {mode === "id" && (
+          <div className="inline-flex rounded-full bg-cloud-mist p-1">
+            <ModeTab
+              active={store === "play"}
+              onClick={() => setStore("play")}
+              label="Google Play"
+            />
+            <ModeTab
+              active={store === "appstore"}
+              onClick={() => setStore("appstore")}
+              label="App Store"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row">
@@ -121,6 +127,28 @@ export function SearchForm({ onSubmit, loading }: SearchFormProps) {
           {loading ? "Searching..." : "Grab"}
         </button>
       </div>
+
+      {mode === "name" && (
+        <p className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <span aria-hidden className="mt-px font-bold">
+            !
+          </span>
+          <span>
+            Searches Google Play and the App Store at once. Note: Google Play
+            name search is rate-limited on Google&apos;s side and can fail
+            intermittently (the App Store stays reliable). For dependable
+            results, search{" "}
+            <button
+              type="button"
+              onClick={() => setMode("id")}
+              className="font-semibold underline underline-offset-2 hover:text-amber-900"
+            >
+              by id
+            </button>
+            .
+          </span>
+        </p>
+      )}
     </form>
   );
 }
