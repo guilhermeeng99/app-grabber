@@ -88,6 +88,13 @@ so use cases and entities stay store-agnostic.
    `term` is ignored. A Play id is a package name (`com.x`); an App Store id
    is a numeric track id (`310633997`) or a bundle id
    (`net.whatsapp.WhatsApp`), routed by shape in the App Store data source.
+   The `appId` may also be a **pasted store URL**: a Google Play details link
+   (`play.google.com/store/apps/details?id=<pkg>`) or an App Store listing
+   link (`apps.apple.com/.../id<digits>`, also `itunes.apple.com`).
+   `parseStoreAppId` pulls the bare id and the store the link names out of it;
+   a recognised link's store overrides the request's `store` (rule 14). Any
+   other input (a raw id, an unrecognised host, a link with no extractable id)
+   is passed through trimmed and unchanged.
 8. **Input required**: a request with neither a non-blank `term` nor a
    non-blank `appId` is a `ValidationError`.
 9. **Locale defaults**: missing/invalid `country`/`lang` default to `us` /
@@ -111,7 +118,8 @@ so use cases and entities stay store-agnostic.
       `appstore`, defaulting to `play` when absent or unknown) is resolved;
       the response carries that single outcome. The id shape is store-bound
       (Play package vs App Store numeric/bundle id), so id search is never
-      cross-store.
+      cross-store. When the `appId` is a pasted store URL (rule 7), the store
+      named by the URL wins over the supplied `store`.
 15. **Asset sections**: every asset carries a `section` (`icon` | `banner` |
     `phone` | `tablet`), set by the store's mapper. The UI renders one block
     per non-empty section, in the order icon, banner, phone, tablet. The App
@@ -221,7 +229,9 @@ inside `MultiGrabResult { outcomes }`.
 
 - `AssetsRequestBody` carries `term?`, `appId?`, optional `store` (`play` |
   `appstore`, used only in id mode; absent/unrecognised → `play`), and
-  locale. A name search ignores `store` and resolves both stores.
+  locale. A name search ignores `store` and resolves both stores. `appId` may
+  be a bare id or a pasted store URL; the use case extracts the id and the
+  link's store (rules 7/14).
 - `POST /api/assets` succeeds (200) with one `StoreGrabResultDTO` per
   resolved store: `{ store, bundle? , error? }` — `bundle` on success,
   `error: { kind, message }` on a per-store failure. The route only returns
@@ -251,7 +261,10 @@ loading ──error(message)──▶ error         (request-level failure only;
 performs `POST /api/assets`, and dispatches `loaded` with the `results`
 array (or `error` for a request-level failure). The search form shows the
 store toggle (Google Play / App Store) **only in id mode**; a name search
-omits it and queries both stores. **Id mode is the default** because Google
+omits it and queries both stores. The id field also accepts a **pasted store
+link** (not just a bare id): the store toggle auto-switches to the link's
+store as you paste, and `parseStoreAppId` extracts the id on submit (a hint
+under the field tells the user). **Id mode is the default** because Google
 Play's name search is rate-limited and flaky; selecting **name** mode shows
 a warning to that effect (it blames Google Play, notes the App Store stays
 reliable, and offers a shortcut back to id). The loaded view renders one
@@ -275,6 +288,8 @@ unmistakable when both render stacked.
 | App Store lookup returns no screenshots | listing page is parsed for phone/iPad shelves; if it also has none → icon only   |
 | Play app with tablet screenshots        | merged phone+tablet list is split by measured aspect into phone & tablet blocks  |
 | App Store id given as numeric or bundle | both resolve (data source routes by shape)                                       |
+| Play / App Store URL pasted as the id   | id + store extracted from the link; the link's store overrides the toggle        |
+| Store URL with no extractable id        | passed through trimmed and unchanged; resolved as a raw id (likely not-found)     |
 | Blank/whitespace term                   | `ValidationError` (rule 8)                                                       |
 | Unknown country/lang                    | defaults to `us`/`en` (rule 9)                                                   |
 | Unknown `store` value (id mode)         | defaults to `play` (rule 14)                                                     |

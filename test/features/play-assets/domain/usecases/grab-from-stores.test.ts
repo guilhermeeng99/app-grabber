@@ -72,6 +72,26 @@ describe("GrabFromStoresUseCase", () => {
     expect(play.call).not.toHaveBeenCalled();
   });
 
+  it("extracts the id and store when the id is a pasted store URL", async () => {
+    vi.mocked(appstore.call).mockResolvedValue(
+      ok(makeAppAssetBundle({ store: "appstore" })),
+    );
+
+    // Pasted an App Store link while the Play toggle was selected: the link's
+    // store wins and the bare id is forwarded to the grabber.
+    const result = expectOk(
+      await useCase.call({
+        appId: "https://apps.apple.com/us/app/whatsapp-messenger/id310633997",
+        store: "play",
+        ...locale,
+      }),
+    );
+
+    expect(result.outcomes.map((o) => o.store)).toEqual(["appstore"]);
+    expect(appstore.call).toHaveBeenCalledWith({ appId: "310633997", ...locale });
+    expect(play.call).not.toHaveBeenCalled();
+  });
+
   it("an id search defaults to Play when no store is given", async () => {
     vi.mocked(play.call).mockResolvedValue(ok(makeAppAssetBundle()));
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import type { AssetsRequestBody } from "@/features/play-assets/api/contracts";
 import type { StoreId } from "@/features/play-assets/domain/entities";
+import { parseStoreAppId } from "@/features/play-assets/domain/parse-store-app-id";
 import { COUNTRIES, LANGUAGES } from "@/features/play-assets/ui/locales";
 
 type SearchMode = "name" | "id";
@@ -38,16 +39,27 @@ export function SearchForm({ onSubmit, loading }: SearchFormProps) {
   const query = mode === "name" ? term : appId;
   const canSubmit = query.trim().length > 0 && !loading;
 
+  // The id field doubles as a "paste a store link" field: as the user types or
+  // pastes a recognised URL, switch the store toggle to the link's store so the
+  // UI reflects what will be searched (the id itself is extracted on submit).
+  function handleIdChange(value: string) {
+    setAppId(value);
+    const detected = parseStoreAppId(value).store;
+    if (detected) setStore(detected);
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) return;
     // A name search omits `store` so the server queries both stores; an id
-    // search is store-bound (the id shape belongs to one store).
-    onSubmit(
-      mode === "name"
-        ? { term: term.trim(), country, lang }
-        : { store, appId: appId.trim(), country, lang },
-    );
+    // search is store-bound. Accept a pasted link too: extract the bare id and
+    // the store it names (the link's store wins over the toggle).
+    if (mode === "name") {
+      onSubmit({ term: term.trim(), country, lang });
+      return;
+    }
+    const ref = parseStoreAppId(appId);
+    onSubmit({ store: ref.store ?? store, appId: ref.id, country, lang });
   }
 
   return (
@@ -99,7 +111,7 @@ export function SearchForm({ onSubmit, loading }: SearchFormProps) {
           <input
             type="text"
             value={appId}
-            onChange={(event) => setAppId(event.target.value)}
+            onChange={(event) => handleIdChange(event.target.value)}
             placeholder={ID_PLACEHOLDER[store]}
             aria-label={ID_LABEL[store]}
             className={`${INPUT_CLASS} font-mono`}
@@ -127,6 +139,13 @@ export function SearchForm({ onSubmit, loading }: SearchFormProps) {
           {loading ? "Searching..." : "Grab"}
         </button>
       </div>
+
+      {mode === "id" && (
+        <p className="mt-3 text-xs text-steel-gray">
+          Tip: paste a full Google Play or App Store link and we&apos;ll pull
+          the id out for you.
+        </p>
+      )}
 
       {mode === "name" && (
         <p className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">

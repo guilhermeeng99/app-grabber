@@ -8,6 +8,7 @@ import type {
   StoreId,
 } from "@/features/play-assets/domain/entities";
 import type { GrabAppAssetsUseCase } from "@/features/play-assets/domain/usecases/grab-app-assets";
+import { parseStoreAppId } from "@/features/play-assets/domain/parse-store-app-id";
 
 const ALL_STORES: readonly StoreId[] = ["play", "appstore"];
 
@@ -25,15 +26,18 @@ export class GrabFromStoresUseCase {
   ) {}
 
   async call(request: MultiGrabRequest): Promise<Result<MultiGrabResult>> {
-    const appId = request.appId?.trim();
+    const rawAppId = request.appId?.trim();
     const term = request.term?.trim();
-    if (!appId && !term) {
+    if (!rawAppId && !term) {
       return err(new ValidationError("Provide an app name or a store id."));
     }
 
+    // An id may arrive as a pasted store link; pull out the bare id and the
+    // store it names. The link's store overrides the request's `store`.
+    const ref = rawAppId ? parseStoreAppId(rawAppId) : null;
     const locale = { country: request.country, lang: request.lang };
-    const grabRequest = appId ? { appId, ...locale } : { term, ...locale };
-    const stores = appId ? [request.store ?? "play"] : ALL_STORES;
+    const grabRequest = ref ? { appId: ref.id, ...locale } : { term, ...locale };
+    const stores = ref ? [ref.store ?? request.store ?? "play"] : ALL_STORES;
 
     const outcomes = await Promise.all(
       stores.map(
