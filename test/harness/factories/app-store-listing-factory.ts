@@ -24,3 +24,38 @@ export function makeRawAppStoreApp(
     ...overrides,
   };
 }
+
+/** The raw iTunes Lookup/Search JSON shape, before `ItunesDataSource` maps it. */
+export interface RawItunesResult {
+  trackId: number;
+  bundleId: string;
+  trackName: string;
+  trackViewUrl: string;
+  artworkUrl512?: string;
+  artistName: string;
+  screenshotUrls?: string[];
+  ipadScreenshotUrls?: string[];
+  appletvScreenshotUrls?: string[];
+}
+
+/**
+ * Test data for the raw iTunes JSON a lookup returns (distinct from
+ * `makeRawAppStoreApp`, which is the already-mapped domain-facing shape).
+ * Defaults carry screenshots; pass empty arrays to exercise the page fallback.
+ */
+export function makeItunesResult(
+  overrides: Partial<RawItunesResult> = {},
+): RawItunesResult {
+  return {
+    trackId: 310633997,
+    bundleId: "net.whatsapp.WhatsApp",
+    trackName: "WhatsApp Messenger",
+    trackViewUrl: "https://apps.apple.com/us/app/whatsapp-messenger/id310633997",
+    artworkUrl512: `${MZ}/icon.png/512x512bb.jpg`,
+    artistName: "WhatsApp Inc.",
+    screenshotUrls: [`${MZ}/s1.png/392x696bb.png`],
+    ipadScreenshotUrls: [],
+    appletvScreenshotUrls: [],
+    ...overrides,
+  };
+}

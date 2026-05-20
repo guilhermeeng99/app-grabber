@@ -2,6 +2,7 @@ import type {
   SearchQuery,
   StoreLocale,
 } from "@/features/play-assets/domain/entities";
+import { fetchAppStoreScreenshots } from "@/features/play-assets/data/appstore-page-screenshots";
 
 /**
  * Project-owned boundary over Apple's public iTunes APIs. We call the
@@ -79,7 +80,7 @@ export class ItunesDataSource implements AppStoreDataSource {
       // Match the scraper convention so the repository maps it to NotFound.
       throw new Error("App not found (404)");
     }
-    return apps[0]!;
+    return withScreenshotFallback(apps[0]!);
   }
 
   private async fetchApps(url: string): Promise<AppStoreApp[]> {
@@ -104,4 +105,21 @@ function toAppStoreApp(raw: ItunesResult): AppStoreApp {
     ipadScreenshots: raw.ipadScreenshotUrls,
     appletvScreenshots: raw.appletvScreenshotUrls,
   };
+}
+
+/**
+ * Recover screenshots from the listing page when the Lookup API returned
+ * none. The API omits screenshots for some apps even though the page has
+ * them; the fallback is best-effort, so a miss leaves the app unchanged
+ * (icon-only). Apps that already have screenshots skip the extra request.
+ */
+async function withScreenshotFallback(app: AppStoreApp): Promise<AppStoreApp> {
+  const hasScreenshots =
+    (app.screenshots?.length ?? 0) > 0 ||
+    (app.ipadScreenshots?.length ?? 0) > 0;
+  if (hasScreenshots) return app;
+
+  const page = await fetchAppStoreScreenshots(app.url);
+  if (page.phone.length === 0 && page.ipad.length === 0) return app;
+  return { ...app, screenshots: page.phone, ipadScreenshots: page.ipad };
 }
