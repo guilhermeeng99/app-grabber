@@ -13,14 +13,13 @@ import type {
   StoreId,
 } from "@/features/play-assets/domain/entities";
 import { SectionGroup } from "@/features/play-assets/ui/asset-section";
-import { groupAssetsBySection } from "@/features/play-assets/ui/asset-sections";
+import {
+  classifyTabletScreenshots,
+  groupAssetsBySection,
+} from "@/features/play-assets/ui/asset-sections";
 import { downloadZip } from "@/features/play-assets/ui/download-zip";
+import { STORE_ACCENT, StoreBadge } from "@/features/play-assets/ui/store-badge";
 import { useImageSizes } from "@/features/play-assets/ui/use-image-sizes";
-
-const STORE_LABEL: Record<StoreId, string> = {
-  play: "Google Play",
-  appstore: "App Store",
-};
 
 const SIZE_OPTIONS = [
   { label: "0.3×", value: 0.3 },
@@ -48,7 +47,14 @@ function BundlePanel({ bundle }: { bundle: AppAssetBundle }) {
   const [zipError, setZipError] = useState<string | null>(null);
   const sizes = useImageSizes(bundle.assets.map((asset) => asset.url));
 
-  const groups = groupAssetsBySection(bundle.assets);
+  // Play merges phone + tablet screenshots into one list; split them by their
+  // measured shape so tablet shots get their own section (the App Store is
+  // already split at the source, so it is left untouched).
+  const classifiedAssets =
+    bundle.store === "play"
+      ? classifyTabletScreenshots(bundle.assets, sizes)
+      : bundle.assets;
+  const groups = groupAssetsBySection(classifiedAssets);
   const count = bundle.assets.length;
   const slug = slugify(bundle.title || bundle.appId);
 
@@ -81,10 +87,13 @@ function BundlePanel({ bundle }: { bundle: AppAssetBundle }) {
   }
 
   return (
-    <section className="rounded-2xl border border-pale-gray bg-snow-white p-5 shadow-sm sm:p-7">
+    <section
+      className={`rounded-2xl border border-l-4 border-pale-gray bg-snow-white p-5 shadow-sm sm:p-7 ${STORE_ACCENT[bundle.store]}`}
+    >
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="truncate text-2xl font-bold text-midnight-indigo">
+          <StoreBadge store={bundle.store} />
+          <h2 className="mt-2 truncate text-2xl font-bold text-midnight-indigo">
             {bundle.title}
           </h2>
           <p className="truncate text-sm text-slate-blue">
@@ -96,8 +105,7 @@ function BundlePanel({ bundle }: { bundle: AppAssetBundle }) {
               className="font-mono text-action-blue underline-offset-2 hover:underline"
             >
               {bundle.appId}
-            </a>{" "}
-            · {STORE_LABEL[bundle.store]}
+            </a>
           </p>
           <p className="mt-1 text-sm text-steel-gray">
             {count} {count === 1 ? "asset" : "assets"} at maximum resolution
@@ -170,10 +178,10 @@ function StoreErrorBanner({
   return (
     <section
       role="alert"
-      className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm sm:p-6"
+      className={`rounded-2xl border border-l-4 border-red-200 bg-red-50 p-5 shadow-sm sm:p-6 ${STORE_ACCENT[store]}`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-lg font-bold text-red-800">{STORE_LABEL[store]}</h2>
+        <StoreBadge store={store} />
         {kind && (
           <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
             {kind}

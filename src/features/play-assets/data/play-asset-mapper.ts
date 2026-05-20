@@ -10,8 +10,10 @@ import { maxRes } from "@/features/play-assets/data/play-image-url";
 /**
  * Build the ordered, max-resolution asset list from a raw Play listing:
  * icon first, then the feature graphic (section `banner`), then screenshots
- * (section `phone`) numbered from 01. Play does not split tablet screenshots,
- * so there is no `tablet` section. Missing fields are skipped. Pure and the
+ * (section `phone`) numbered from 01. Play's scraper merges phone and tablet
+ * screenshots into one list with no device tag, so the mapper tags them all
+ * `phone`; the UI reclassifies tablet-shaped ones by measured aspect ratio
+ * (`classifyTabletScreenshots`). Missing fields are skipped. Pure and the
  * single source of truth for Play asset naming, ordering and section tagging
  * — mirrored by `play-asset-mapper.test.ts`.
  */
