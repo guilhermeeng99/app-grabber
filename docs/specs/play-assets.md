@@ -34,9 +34,11 @@ which repository the composition root wires per store.
 | url      | `string`       | Max-resolution URL on the store's image CDN                                           |
 
 `featureGraphic` (section `banner`) is Google Play only; the App Store has
-no equivalent. The `tablet` section is App Store only (iPad screenshots);
-Play screenshots are all `phone`. `section` is set by each store's mapper so
-the UI groups assets without parsing names.
+no equivalent. `section` is set by each store's mapper so the UI groups assets
+without parsing names. The App Store splits `phone` vs `tablet` (iPad) at the
+source; Play's scraper merges both into one untagged list, so the Play mapper
+tags every screenshot `phone` and the UI reclassifies tablet-shaped ones by
+measured aspect ratio (see rule 15 and the UI section).
 
 ### AppSummary (a single search hit)
 
@@ -112,7 +114,12 @@ so use cases and entities stay store-agnostic.
       cross-store.
 15. **Asset sections**: every asset carries a `section` (`icon` | `banner` |
     `phone` | `tablet`), set by the store's mapper. The UI renders one block
-    per non-empty section, in the order icon, banner, phone, tablet.
+    per non-empty section, in the order icon, banner, phone, tablet. The App
+    Store splits phone vs tablet at the source; Play's scraper merges both into
+    one untagged list, so the UI reclassifies tablet-shaped Play screenshots
+    (measured shorter÷longer side ratio ≥ 0.65) from `phone` to `tablet` before
+    grouping. Heuristic: it relies on the browser-measured size, so the split
+    settles as images load and unusual aspect ratios may misclassify.
 16. **Per-section download**: each section block offers its own ZIP
     (`<slug>-<section>.zip`) alongside the bundle-wide "Download all"
     (`<slug>.zip`). Both reuse `/api/download/zip` with the section's items.
@@ -172,6 +179,16 @@ interface AppStoreDataSource {
   rate-limiting; see `core/utils/{retry,ttl-cache}.ts`.
 - `ItunesDataSource.app` queries by `id` for a numeric id and by `bundleId`
   otherwise; an empty lookup throws so the repository maps it to NotFound.
+- **Screenshot fallback**: Apple's Lookup/Search API populates
+  `screenshotUrls`/`ipadScreenshotUrls` inconsistently — for some apps it
+  returns empty arrays even though the listing has screenshots (e.g. Gentler
+  Streak). When the lookup yields no phone *and* no iPad screenshots,
+  `ItunesDataSource.app` fetches the listing page (`trackViewUrl`) and parses
+  its embedded `serialized-server-data` JSON for the phone/iPad shelves
+  (`appstore-page-screenshots.ts`). This is still Apple's own data over the
+  built-in `fetch` (no third-party scraper). The fallback never throws: any
+  fetch/parse failure leaves the (icon-only) bundle intact. Apps whose lookup
+  already has screenshots skip the extra request entirely.
 
 ## 5. Use Cases
 
@@ -240,7 +257,9 @@ a warning to that effect (it blames Google Play, notes the App Store stays
 reliable, and offers a shortcut back to id). The loaded view renders one
 panel per result — a sectioned asset panel reading
 `bundle.store`/`bundle.listingUrl` on success, or a per-store error banner
-on failure.
+on failure. Each panel (success or error) leads with a coloured `StoreBadge`
+(brand glyph + name) and a matching left accent stripe so the source store is
+unmistakable when both render stacked.
 
 ## 8. Edge Cases
 
@@ -253,6 +272,8 @@ on failure.
 | App id does not exist                   | scraper throws 404 → `NotFoundError` outcome for that store                      |
 | Listing with zero images                | `AppAssetBundle` with empty `assets`; UI shows empty state, no ZIP button        |
 | iPhone-only App Store app               | no iPad screenshots; icon + iPhone screenshots only                              |
+| App Store lookup returns no screenshots | listing page is parsed for phone/iPad shelves; if it also has none → icon only   |
+| Play app with tablet screenshots        | merged phone+tablet list is split by measured aspect into phone & tablet blocks  |
 | App Store id given as numeric or bundle | both resolve (data source routes by shape)                                       |
 | Blank/whitespace term                   | `ValidationError` (rule 8)                                                       |
 | Unknown country/lang                    | defaults to `us`/`en` (rule 9)                                                   |
