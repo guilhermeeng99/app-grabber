@@ -1,6 +1,6 @@
 {
   "name": "play-grabber",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "private": true,
   "type": "module",
   "description": "Website to search a Google Play app and download its icon + promotional images (feature graphic + screenshots) in the highest available resolution.",
