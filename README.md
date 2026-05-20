@@ -76,11 +76,32 @@ src/
 test/                         # mirrors src/ (Vitest) + harness/
 ```
 
-## Deploy
+## Continuous deployment
 
-Optimised for [Vercel](https://vercel.com): import the repo and deploy. The
-scraper routes require the Node.js runtime (already pinned in each handler), not
-the Edge runtime.
+`.github/workflows/deploy.yml` runs on every push and pull request:
+
+1. **Quality gate** (always): `npm ci` then `lint`, `test`, `build`.
+2. **On push to `main` only**: auto-bump the patch version (tagged commit
+   marked `[skip ci]`), deploy to Vercel production, and publish a GitHub
+   release.
+
+The scraper routes need the Node.js runtime (pinned per handler), so the app
+deploys to **Vercel**, not a static host.
+
+### Enable deploys
+
+Add these repository secrets (Settings, then Secrets and variables, then
+Actions). Until they exist the deploy step is skipped and the rest of the
+pipeline still runs.
+
+| Secret | Where to find it |
+| --- | --- |
+| `VERCEL_TOKEN` | Vercel, Account Settings, Tokens |
+| `VERCEL_ORG_ID` | run `vercel link` locally, read `.vercel/project.json` |
+| `VERCEL_PROJECT_ID` | same `.vercel/project.json` |
+
+Alternatively, connect the repo in the Vercel dashboard for zero-config push
+deploys (then the workflow's deploy step is redundant).
 
 ## Notes
 

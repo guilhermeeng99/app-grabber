@@ -1,0 +1,86 @@
+name: CI & Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Needed to push the version-bump commit/tag and to create releases.
+permissions:
+  contents: write
+
+# Never run two deploys for the same ref at once.
+concurrency:
+  group: ci-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  ci-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so the bump commit can be pushed back.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      # --- Quality gate: runs on every push AND pull request ---
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+      # --- Everything below only runs on pushes to main (not PRs) ---
+
+      # Auto-advance the patch version on every push to main. The bump
+      # commit is tagged and carries [skip ci]; pushing it with the default
+      # GITHUB_TOKEN does not retrigger this workflow, so there is no loop.
+      - name: Bump patch version
+        id: bump
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          npm version patch -m "chore(release): v%s [skip ci]"
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Push version bump and tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: git push --follow-tags origin HEAD:main
+
+      # Deploy to Vercel. Skipped automatically until the VERCEL_* secrets
+      # are set, so the quality gate + versioning work from the first push.
+      - name: Deploy to Vercel (production)
+        id: deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.VERCEL_TOKEN != ''
+        run: |
+          npm i -g vercel@latest
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $url"
+
+      - name: Create GitHub release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.bump.outputs.version }}
+          name: v${{ steps.bump.outputs.version }}
+          body: |
+            Commit: ${{ github.sha }}
+
+            ${{ github.event.head_commit.message }}
+
+            ${{ steps.deploy.outputs.url && format('Deployment: {0}', steps.deploy.outputs.url) || 'Deployment: skipped (add the VERCEL_* secrets to enable).' }}
