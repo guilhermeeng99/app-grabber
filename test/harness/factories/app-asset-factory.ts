@@ -31,6 +31,9 @@ export function makeAppAssetBundle(
     appId: "com.example.app",
     title: "Example App",
     developer: "Example Dev",
+    store: "play",
+    listingUrl:
+      "https://play.google.com/store/apps/details?id=com.example.app",
     assets: [makeAppAsset()],
     ...overrides,
   };

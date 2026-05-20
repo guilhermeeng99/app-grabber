@@ -7,19 +7,19 @@ import type {
   StoreLocale,
 } from "@/features/play-assets/domain/entities";
 import type { StoreAssetsRepository } from "@/features/play-assets/domain/repository";
-import { buildAssets } from "@/features/play-assets/data/play-asset-mapper";
+import { buildAssets } from "@/features/play-assets/data/appstore-asset-mapper";
 import { toAppError, topSummary } from "@/features/play-assets/data/store-result";
-import type { PlayStoreDataSource } from "@/features/play-assets/data/play-store-datasource";
+import type { AppStoreDataSource } from "@/features/play-assets/data/app-store-datasource";
 
-const STORE_NAME = "Google Play";
+const STORE_NAME = "the App Store";
 
 /**
- * Google Play implementation of `StoreAssetsRepository`. Translates the
- * scraper's raw results and thrown errors into the domain `Result`; the
- * only class aware that `google-play-scraper` exists.
+ * App Store implementation of `StoreAssetsRepository`. Translates the
+ * iTunes API's raw results and thrown errors into the domain `Result`; the
+ * only class aware of how App Store data is fetched.
  */
-export class PlayAssetsRepositoryImpl implements StoreAssetsRepository {
-  constructor(private readonly dataSource: PlayStoreDataSource) {}
+export class AppStoreAssetsRepositoryImpl implements StoreAssetsRepository {
+  constructor(private readonly dataSource: AppStoreDataSource) {}
 
   async search(query: SearchQuery): Promise<Result<AppSummary>> {
     try {
@@ -39,8 +39,10 @@ export class PlayAssetsRepositoryImpl implements StoreAssetsRepository {
         appId: app.appId,
         title: app.title,
         developer: app.developer,
-        store: "play",
-        listingUrl: `https://play.google.com/store/apps/details?id=${app.appId}`,
+        store: "appstore",
+        // trackViewUrl is the canonical listing URL; fall back to the
+        // numeric-id form if the lookup omitted it.
+        listingUrl: app.url || `https://apps.apple.com/app/id${app.id}`,
         assets: buildAssets(app),
       });
     } catch (error) {

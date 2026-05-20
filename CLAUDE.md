@@ -1,8 +1,11 @@
 # App Grabber (play-grabber) - Project Conventions
 
-A website that searches a Google Play app and downloads its icon and
-promotional images (feature graphic + screenshots) in the highest
-available resolution. Built with **Next.js (App Router) + TypeScript**.
+A website that searches an app on **Google Play or the App Store** and
+downloads its icon and promotional images (feature graphic + screenshots)
+in the highest available resolution. Built with **Next.js (App Router) +
+TypeScript**. The two stores share one domain, use cases and UI; they differ
+only inside `data/` (one scraper, mapper and image resolver each), selected
+per request in `di.ts`.
 
 These conventions are the TypeScript/Next port of the financo project's
 Clean-Architecture + spec-driven discipline.
@@ -72,7 +75,7 @@ imports nothing outward.
 | Aspect              | Detail                                                          |
 | ------------------- | -------------------------------------------------------------- |
 | **Framework**       | Next.js 15 (App Router), React 19, TypeScript (strict)         |
-| **Scraping**        | `google-play-scraper` (server-side only, wrapped behind a DS)  |
+| **Scraping**        | `google-play-scraper` (Play) + official iTunes Search/Lookup API via `fetch` (App Store); each wrapped behind a DS |
 | **Styling**         | Tailwind CSS v4                                                |
 | **ZIP**             | `archiver` (streamed from the route handler)                   |
 | **Error handling**  | `Result<T, E>` + sealed `AppError` hierarchy (Either analogue) |
@@ -194,11 +197,17 @@ Test infrastructure lives in `test/harness/`:
   scraper cannot run on the Edge runtime).
 - `google-play-scraper` is listed in `serverExternalPackages` (next.config):
   bundling it silently breaks its search-page parser (name search returns
-  no results) while app-by-id keeps working. Do not remove it.
+  no results) while app-by-id keeps working. Do not remove it. The App Store
+  side calls Apple's official iTunes Search/Lookup API with built-in `fetch`
+  (no third-party scraper, so no `request`-chain CVEs), needing no
+  externalisation.
 - **SSRF guard**: the download proxy and ZIP routes only fetch hosts on
-  the allow-list (`isAllowedImageHost`). The ZIP route takes client-supplied
-  (size-scaled) URLs but re-validates every host, caps the item count, and
-  sanitizes file names, so the allow-list is what prevents SSRF.
+  the allow-list (`isAllowedImageHost` in `image-host.ts`) — HTTPS on the
+  Play CDN or a subdomain of `mzstatic.com`, matched by suffix so
+  look-alikes like `mzstatic.com.evil.com` are rejected. The ZIP route takes
+  client-supplied (size-scaled) URLs but re-validates every host, caps the
+  item count, and sanitizes file names, so the allow-list is what prevents
+  SSRF.
 - Download responses set `Content-Disposition: attachment` and
   `Cache-Control: no-store`; file names are sanitized before reaching headers.
 

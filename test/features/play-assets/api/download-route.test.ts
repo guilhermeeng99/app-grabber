@@ -38,6 +38,17 @@ describe("GET /api/download", () => {
     expect(Array.from(body)).toEqual([1, 2, 3, 4]);
   });
 
+  it("proxies an Apple mzstatic image (App Store CDN allow-list)", async () => {
+    const apple = "https://is1-ssl.mzstatic.com/image/thumb/x/9999x9999bb.jpg";
+    const fetchMock = vi.fn().mockResolvedValue(imageResponse());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await GET(makeRequest({ url: apple, name: "icon.jpg" }));
+
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledWith(apple);
+  });
+
   it("rejects a disallowed host without fetching (SSRF guard)", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);

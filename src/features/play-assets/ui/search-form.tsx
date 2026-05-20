@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import type { AssetsRequestBody } from "@/features/play-assets/api/contracts";
+import type { StoreId } from "@/features/play-assets/domain/entities";
 import { COUNTRIES, LANGUAGES } from "@/features/play-assets/ui/locales";
 
 type SearchMode = "name" | "id";
@@ -12,7 +13,20 @@ interface SearchFormProps {
   loading: boolean;
 }
 
+// Per-store hint for the "by id" field — Play takes a package name, the
+// App Store takes a numeric track id or a bundle id.
+const ID_PLACEHOLDER: Record<StoreId, string> = {
+  play: "e.g. com.whatsapp",
+  appstore: "e.g. 310633997 or net.whatsapp.WhatsApp",
+};
+
+const ID_LABEL: Record<StoreId, string> = {
+  play: "By package id",
+  appstore: "By App Store id",
+};
+
 export function SearchForm({ onSubmit, loading }: SearchFormProps) {
+  const [store, setStore] = useState<StoreId>("play");
   const [mode, setMode] = useState<SearchMode>("name");
   const [term, setTerm] = useState("");
   const [appId, setAppId] = useState("");
@@ -27,8 +41,8 @@ export function SearchForm({ onSubmit, loading }: SearchFormProps) {
     if (!canSubmit) return;
     onSubmit(
       mode === "name"
-        ? { term: term.trim(), country, lang }
-        : { appId: appId.trim(), country, lang },
+        ? { store, term: term.trim(), country, lang }
+        : { store, appId: appId.trim(), country, lang },
     );
   }
 
@@ -37,17 +51,32 @@ export function SearchForm({ onSubmit, loading }: SearchFormProps) {
       onSubmit={handleSubmit}
       className="rounded-2xl border border-pale-gray bg-snow-white p-5 shadow-sm sm:p-7"
     >
-      <div className="mb-5 inline-flex rounded-full bg-cloud-mist p-1">
-        <ModeTab
-          active={mode === "name"}
-          onClick={() => setMode("name")}
-          label="By name"
-        />
-        <ModeTab
-          active={mode === "id"}
-          onClick={() => setMode("id")}
-          label="By package id"
-        />
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="inline-flex rounded-full bg-cloud-mist p-1">
+          <ModeTab
+            active={store === "play"}
+            onClick={() => setStore("play")}
+            label="Google Play"
+          />
+          <ModeTab
+            active={store === "appstore"}
+            onClick={() => setStore("appstore")}
+            label="App Store"
+          />
+        </div>
+
+        <div className="inline-flex rounded-full bg-cloud-mist p-1">
+          <ModeTab
+            active={mode === "name"}
+            onClick={() => setMode("name")}
+            label="By name"
+          />
+          <ModeTab
+            active={mode === "id"}
+            onClick={() => setMode("id")}
+            label={ID_LABEL[store]}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row">
@@ -65,8 +94,8 @@ export function SearchForm({ onSubmit, loading }: SearchFormProps) {
             type="text"
             value={appId}
             onChange={(event) => setAppId(event.target.value)}
-            placeholder="e.g. com.whatsapp"
-            aria-label="Package id"
+            placeholder={ID_PLACEHOLDER[store]}
+            aria-label={ID_LABEL[store]}
             className={`${INPUT_CLASS} font-mono`}
           />
         )}

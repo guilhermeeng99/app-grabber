@@ -3,13 +3,14 @@ import type {
   AppAsset,
   AssetKind,
 } from "@/features/play-assets/domain/entities";
-import { extFromUrl, maxRes } from "@/features/play-assets/data/play-image-url";
+import { extFromUrl } from "@/features/play-assets/data/image-url";
+import { maxRes } from "@/features/play-assets/data/play-image-url";
 
 /**
  * Build the ordered, max-resolution asset list from a raw Play listing:
  * icon first, then the feature graphic, then screenshots numbered from
  * 01. Missing fields are skipped. Pure and the single source of truth
- * for asset naming and ordering — mirrored by `asset-mapper.test.ts`.
+ * for Play asset naming and ordering — mirrored by `play-asset-mapper.test.ts`.
  */
 export function buildAssets(
   app: Pick<IAppItemFullDetail, "icon" | "headerImage" | "screenshots">,

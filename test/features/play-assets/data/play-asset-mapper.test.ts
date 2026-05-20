@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildAssets } from "@/features/play-assets/data/asset-mapper";
+import { buildAssets } from "@/features/play-assets/data/play-asset-mapper";
 import { makeRawApp } from "../../../harness/factories/app-listing-factory";
 
 const CDN = "https://play-lh.googleusercontent.com";
 
-describe("buildAssets", () => {
+describe("buildAssets (Google Play)", () => {
   it("orders icon, then feature graphic, then numbered screenshots", () => {
     const assets = buildAssets(
       makeRawApp({
@@ -30,7 +30,11 @@ describe("buildAssets", () => {
 
   it("normalises every URL to maximum resolution", () => {
     const assets = buildAssets(
-      makeRawApp({ icon: `${CDN}/icon=w512-h512`, headerImage: "", screenshots: [] }),
+      makeRawApp({
+        icon: `${CDN}/icon=w512-h512`,
+        headerImage: "",
+        screenshots: [],
+      }),
     );
     expect(assets[0]?.url).toBe(`${CDN}/icon=s0`);
   });

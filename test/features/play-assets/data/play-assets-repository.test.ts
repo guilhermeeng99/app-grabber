@@ -65,6 +65,10 @@ describe("PlayAssetsRepositoryImpl", () => {
 
       expect(bundle.appId).toBe("com.x");
       expect(bundle.title).toBe("X");
+      expect(bundle.store).toBe("play");
+      expect(bundle.listingUrl).toBe(
+        "https://play.google.com/store/apps/details?id=com.x",
+      );
       expect(bundle.assets.length).toBeGreaterThan(0);
     });
 

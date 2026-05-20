@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { sanitizeFileName } from "@/app/api/_lib/request-helpers";
-import { isAllowedImageHost } from "@/features/play-assets/data/play-image-url";
+import { isAllowedImageHost } from "@/features/play-assets/data/image-host";
 
 export const runtime = "nodejs";
 
 /**
- * Proxy a single Play image so the browser receives it as a forced
+ * Proxy a single store image so the browser receives it as a forced
  * download (`Content-Disposition: attachment`) — a cross-origin `<a
- * download>` to googleusercontent would otherwise just navigate. The
- * `url` is re-validated against the host allow-list to block SSRF.
+ * download>` to the CDN would otherwise just navigate. The `url` is
+ * re-validated against the host allow-list to block SSRF.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const url = request.nextUrl.searchParams.get("url");

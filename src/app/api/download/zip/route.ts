@@ -7,7 +7,7 @@ import { err } from "@/core/result";
 import { jsonResult } from "@/app/api/_lib/respond";
 import { sanitizeFileName } from "@/app/api/_lib/request-helpers";
 import type { ZipRequestBody } from "@/features/play-assets/api/contracts";
-import { isAllowedImageHost } from "@/features/play-assets/data/play-image-url";
+import { isAllowedImageHost } from "@/features/play-assets/data/image-host";
 
 export const runtime = "nodejs";
 

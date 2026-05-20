@@ -1,4 +1,7 @@
-import type { AppAssetBundle } from "@/features/play-assets/domain/entities";
+import type {
+  AppAssetBundle,
+  StoreId,
+} from "@/features/play-assets/domain/entities";
 
 /**
  * Wire DTOs shared by the API route handlers and the browser client, so
@@ -7,9 +10,11 @@ import type { AppAssetBundle } from "@/features/play-assets/domain/entities";
 
 /** Body of `POST /api/assets`. */
 export interface AssetsRequestBody {
+  /** Which store to target; defaults to "play". */
+  store?: StoreId;
   /** App name to search for; ignored when `appId` is present. */
   term?: string;
-  /** Exact package id; skips the search step. */
+  /** Exact id (Play package / App Store bundle or numeric); skips search. */
   appId?: string;
   /** Two-letter store country code; defaults to "us". */
   country?: string;

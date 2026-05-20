@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { slugify } from "@/core/utils/slugify";
 import type { ZipItem } from "@/features/play-assets/api/contracts";
-import { withLongestSide } from "@/features/play-assets/data/play-image-url";
+import { withLongestSide } from "@/features/play-assets/data/image-url";
 import type { AppAssetBundle } from "@/features/play-assets/domain/entities";
 import { AssetCard } from "@/features/play-assets/ui/asset-card";
 import { useImageSizes } from "@/features/play-assets/ui/use-image-sizes";
@@ -20,9 +20,7 @@ export function AssetGrid({ bundle }: { bundle: AppAssetBundle }) {
   const sizes = useImageSizes(bundle.assets.map((asset) => asset.url));
 
   const count = bundle.assets.length;
-  const playHref = `https://play.google.com/store/apps/details?id=${encodeURIComponent(
-    bundle.appId,
-  )}`;
+  const storeLabel = bundle.store === "appstore" ? "App Store" : "Google Play";
 
   function scaledUrl(url: string): string {
     const measured = sizes[url];
@@ -62,13 +60,14 @@ export function AssetGrid({ bundle }: { bundle: AppAssetBundle }) {
           <p className="truncate text-sm text-slate-blue">
             {bundle.developer} ·{" "}
             <a
-              href={playHref}
+              href={bundle.listingUrl}
               target="_blank"
               rel="noreferrer"
               className="font-mono text-action-blue underline-offset-2 hover:underline"
             >
               {bundle.appId}
-            </a>
+            </a>{" "}
+            · {storeLabel}
           </p>
           <p className="mt-1 text-sm text-steel-gray">
             {count} {count === 1 ? "asset" : "assets"} at maximum resolution

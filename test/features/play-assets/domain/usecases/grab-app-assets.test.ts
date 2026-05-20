@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NotFoundError } from "@/core/errors";
 import { err, ok } from "@/core/result";
-import type { PlayAssetsRepository } from "@/features/play-assets/domain/repository";
+import type { StoreAssetsRepository } from "@/features/play-assets/domain/repository";
 import { GetAppAssetsUseCase } from "@/features/play-assets/domain/usecases/get-app-assets";
 import { GrabAppAssetsUseCase } from "@/features/play-assets/domain/usecases/grab-app-assets";
 import { SearchAppUseCase } from "@/features/play-assets/domain/usecases/search-app";
@@ -13,7 +13,7 @@ import {
 import { expectErr, expectOk } from "../../../../harness/helpers";
 
 describe("GrabAppAssetsUseCase", () => {
-  let repository: PlayAssetsRepository;
+  let repository: StoreAssetsRepository;
   let grab: GrabAppAssetsUseCase;
 
   beforeEach(() => {
